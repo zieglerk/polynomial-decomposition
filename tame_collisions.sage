@@ -50,7 +50,55 @@ def dickson_T(n, original=False):
         f += n/(n-i) * binomial(n-i, i) * (-z)^i * x^(n-2*i)
     if original:
         f = f - f.subs(x=0)
-    return f
+        return f
+
+# older code for Dickson's for comparison
+# =======================================
+# p = 5
+# e = 1
+# n = 21
+# q = p^e
+# y = var('y')
+# K = GF(q, 'y')
+# y = K.gens()[0]
+# x,z = var('x,z')
+# R = PolynomialRing(K, 'x,z')
+# [x,z] = R.gens()
+#
+# # generate a list of Dickson polynomials up to degree n in two variables
+#
+# T = [R(2), R(x)]
+# for k in srange(2,n+1):
+#     next = x * T[k-1] - z*T[k-2]
+#     T.append(next)
+#
+# list = []
+#
+# a = K(1)
+# for b in K:
+#     for zeta in K:
+#         if zeta != 0:
+#             C = a^(-n) * T[n].substitute(x = a*x+b, z = zeta) - a^(-n)*T[n].substitute(x = b, z = zeta)
+#             list.append(C)
+#
+# # checking we have generated as many as we wanted
+# print len(list) == q*(q-1)
+# # show that all are distinct
+# print len(set(list)) == len(list)
+#
+# for a in K:
+#     if a!=0 and a!= 1:
+#         for b in K:
+#             for zeta in K:
+#                 if zeta != 0:
+#                     C = a^(-n) * T[n].substitute(x = a*x+b, z = zeta) - a^(-n)*T[n].substitute(x = b, z = zeta)
+#                     list.append(C)
+#
+# # check again, that we have produced all we wanted to
+# print len(list) == q*(q-1)*(q-1)
+# # check that no more have been added
+# print len(set(list)) == q*(q-1)
+
 
 def E(d, e, q):
     '''generator of exponential components at degree d with exponent e over Fq.'''
@@ -611,84 +659,6 @@ def Dickson_table(N):
     # add the last line and return
     t.append(r"\end{tabular}")
     return ''.join(t)
-
-
-
-# 4. approximation functions \rho, \eta, \eps
-# ===========================================
-
-def rho(r,n,q):
-    S = P(r,1,q)*P(r,n-1,q)/(1-q^(-b(r-1,n-1)))
-    return S.simplify_full()
-
-def eta(r,n,s,q):
-    S = P(r,1,q)*P(r,n-s,q)
-    return S.simplify_full()
-
-def eps(r,n,q):
-    ell = n.divisors()[1]
-    S = P(r,n/ell,q^ell)/(ell*(1-q^(-ell*b(r-1,n/ell))))
-    return S.simplify_full()
-
-# 5. plotting the relative error
-# ==============================
-
-def RR_vs_rho_plot(r,n_list):
-    '''
-    graph containing relative errors (R_{r,n}(q)-rho_{r,n}(q))/rho_{r,n}(q) and the upper bound of
-    '''
-    upper_bound = 1/((1-q^(-1))*(1-q^(-r)))
-    G = plot(upper_bound, 2, 20, color='black')
-    G += text("$1/((1-\mathbf{q}^{-r})(1-\mathbf{q}^{-1}))$", (10, 1.5), color='black', fontsize=12)
-    print 'calling generating function up to N =', max(n_list)
-    S = RR(r,z,max(n_list))
-    for n in n_list:
-        print 'generating graph for n =', n
-        numerator = expand(S.coeff(z^n) - rho(r,n,q))
-        denominator = expand( rho(r,n,q) * q^(-binomial(n+r-2,r-1)+r*(r+1)/2))
-        quotient = (numerator/denominator).simplify_full()
-        X = srange(2,20,0.1)
-        Y = [quotient(x).n() for x in X]
-        G += list_plot(zip(X,Y), plotjoined=1, color='black')
-        G += text("$n=%s$"%str(n), (1, quotient(2)), fontsize=12, color='black')
-    return G
-
-def QQ_vs_eta_plot(r,n_list,s):
-    '''
-    graph containing relative errors (Q_{r,n,s}(q)-eta_{r,n,s}(q))/eta_{r,n,s}(q) and the upper bound of
-    '''
-    G = plot([])
-    print 'calling generating function up to N =', max(n_list)
-    S = QQ(r,s,z,max(n_list))
-    for n in n_list:
-        print 'generating graph for n =', n
-        numerator = expand(S.coeff(z^n) - eta(r,n,s,q))
-        denominator = expand( eta(r,n,s,q) * q^(-binomial(n-s+r,r)+binomial(n-2*s+r,r)+r*(r+1)/2))
-        quotient = (numerator/denominator).simplify_full()
-        X = srange(2,20,0.1)
-        Y = [quotient(x).n() for x in X]
-        G += list_plot(zip(X,Y), plotjoined=1, color='black')
-        G += text("$n=%s$"%str(n), (1, quotient(2)), fontsize=12, color='black')
-    return G
-
-def EE_vs_eps_plot(r,n_list):
-    '''
-    graph containing relative errors (E_{r,n}(q)-eps_{r,n}(q))/eta_{r,n}(q) and the upper bound of
-    '''
-    G = plot([])
-    print 'calling generating function up to N =', max(n_list)
-    S = EE(r,z,max(n_list))
-    for n in n_list:
-        print 'generating graph for n =', n
-        ell = n.divisors()[1]
-        numerator = expand(S.coeff(z^n) - eps(r,n,q))
-        denominator = expand( eps(r,n,q) * q^(-(ell-1)*(b(r-1,n/ell)-r)-1))
-        quotient = (numerator/denominator).simplify_full()
-        X = srange(2,10,0.1)
-        Y = [quotient(x).n() for x in X]
-        G += list_plot(zip(X,Y), plotjoined=1, color='black')
-        G += text("$n=%s$"%str(n), (1, quotient(2)), fontsize=12, color='black')
-    return G
 
 def refineMatStr(dd, ee, first, last):
     Clist = refineMat(dd, ee, verbose)

@@ -1,21 +1,59 @@
-decomposable polynomials (2013-12-24)
-=====================================
+************************
+Decomposable Polynomials
+************************
 
-This package contains code to count decomposable polynomials over finite fields.
-The crucial intermediate step for any inclusion-exclusion formula to do so
+This Sage-module provides functions to study the decomposition of
+univariate polynomials over finite field. We measure the degree of our
+understanding by our ability to count the decomposables approximately
+and exactly. The crucial ingredient for any inclusion-exclusion formula to do so
 requires an understanding of collisions, that is of distinct decompositions of a
 given polynomial.
 
-submodules
+Submodules
 ==========
 
-Mark Giesbrecht's Maple code for add_coll
-    counts Jordan rational forms (?)
+tame_collisions.sage
+    determine the structure (and number) all tame collisions for a given a set of ordered factorizations
 
-Christian Gorzel's singular code
-    implements Joachim's decomposition algorithm (?)
+compose_by_brute_force.sage
+    create look-up tables of complete factorizations; output to ./data/
 
-polynomials
+add_count.sage
+    implementation of the (wild) counting formulas of GGZ, also comparison with
+    CoulterHavasHenderson2004
+
+add_coll.sage
+    determine all decompositions of additive polynomials via the rational Jordan
+    form of the Frobenius on its root space
+
+p2_decompose.sage
+p2_construct_collision_by_parameter.sage
+    TODO BGZ
+
+
+Output
+======
+
+./TO_SORT--old
+    fifi*
+    /data/
+        - C
+        - D
+        - I
+        - P
+        - email n=25, q=5
+        - old for comparison incl. n=18, q=9 and more wild stuff
+     /report/
+
+./data/
+    - C_n_q.sobj
+    - D_n_q.sobj
+    - Dd_n_q.sobj
+    - Dtext_n_q.txt
+    - numbers.txt
+
+
+Polynomials
 ===========
 
 dictionaries and sets of monic original polynomials at degree n over Fq
@@ -24,7 +62,7 @@ Q: store complete or incomplete decompositions
 A: we opt for complete, since this is the more refined picture
 
 Note: this requires testing for indecomposability of every component (maybe
-expensive);  if that is too costly, simply loop over all polynomials, obtain
+expensive); if that is too costly, simply loop over all polynomials, obtain
 all decompositions and write a post-processing procedure to "filter" the
 underlying indecomposable ones
 
@@ -34,17 +72,15 @@ Consequence: store only D_n_q and C_n_q; produce I_n_q dynamically
 
 see ``compose_by_brute_force.sage`` for detailed specification
 
-- dict D_n_q    # if this computation runs out of memory -- maybe at least
+- dict Dd_n_q    # if this computation runs out of memory -- maybe at least
   counting is possible
-- dict P_n_q
-- Set I_n_q
-- Set C_n_q
+- set D_n_q vs. Dtext_n_q
+- set C_n_q
 
 prime powers q (up to 30)
 composite n (as large as possible)
 - level 1: n is prime DONE
 - level 2: n is product of two primes (maybe identical): 33, 35, 39, 49, 55, 65, 77, 91
-
 
 mark* all composites with more than 2 prime factors (counted with multiplicity)
 
@@ -56,11 +92,11 @@ n\q    2   3    4    5     7
   8*   Y  YY    Y   YY    YY
    9   Y   Y    Y    Y     Y
   10   Y   Y    Y    Y     Y
- 12*   Y   Y    Y   YY    YY   
-  14   Y   Y    Y    Y     Y 
+ 12*   Y   Y    Y   YY    YY
+  14   Y   Y    Y    Y     Y
   15   Y   Y    Y    Y     Y
  16*   Y  YY    Y   YY     ?
- 18*   Y   Y        YY     ?
+ 18*   Y   Y    Y   YY     ?
  20*   Y  YY              EOM
   21   Y   Y
   22   Y   Y
@@ -78,7 +114,43 @@ n\q    2   3    4    5     7
  81*  EOT       -    -     -
 105*  EOT       -
 125    ?   ?    ?          ?
-
+====  === ===  ===  ===   ===
 1155
 2310
+====  === ===  ===  ===   ===
 
+References
+==========
+
+- Reinhold Burger and Albert Heinle, Diffie Hellman -- Non commutative version
+  http://github.com/ioah86/diffieHellmanNonCommutative.
+
+- Xavier Caruso, skew_polynomial
+
+- Manuel Kauers and Maximilian Jaroschek and Fredrik Johansson, Ore Polynomials in
+  Sage, http://arxiv.org/abs/1306.4263v1.
+
+- W. A. Stein et al. (2014). Sage Mathematics Software (Version
+  6.3). The Sage Development Team. URL http://www.sagemath.org.
+
+
+Author
+======
+
+- Konstantin Ziegler (2013-12-24): initial version
+
+License
+=======
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
