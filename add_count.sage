@@ -1,4 +1,11 @@
-'''
+'''This module offers conuting functions for the decomposition of additive polynomials.
+
+For a given additive polynomial f of degree r^n, we ask for the number of right components of f that have degree r^d. The possible numbers follow a pattern that allow only for a selected few values. For example, for additive polynomials of degree r^2, we may only have 0, 1, 2, or r+1 right components of degree r.
+
+So, we also ask the "inverse" question: For a given $k$, how many additive polynomials of degree r^n have exactly k right components of degree r^d.
+
+The first question is answered using the rational Jordan form of the Frobenius operator on the root space of f. The second question is motivated by our leitmotif to count the number of decomposable additive polynomials. The corresponding inclusion-exclusion formula requires counting these k-collisions.
+
 - functions to compute the numbers as given in our papers by their explicit formula
 - also including functions to deal with Bluher's equation
 - make a conjecture test: the computed number is correct
@@ -12,6 +19,136 @@ variables:
 - characteristic: p
 - degree of right component: r
 '''
+
+import itertools
+
+def is_subspecies(mu, lam):
+    '''check if mu is a subspecies of lam. Using the criterion of Fripertinger, Theorem 3.
+
+sage: is_subspecies([1,1],[1,0,1])
+True
+sage: is_subspecies([1,1,1],[1,0,1])
+False
+sage: is_subspecies([1,1,1],[1,0,2])
+True
+'''
+    assert lam[0] == mu[0]
+    muext = mu + (len(lam)-len(mu))*[0]
+    k = len(lam) - 1
+    for j in range(1, k+1):
+        if sum(muext[j:]) > sum(lam[j:]):
+            return False
+        return True
+
+def dim(lam):
+    '''given a species returns the dimension of the ambient space.'''
+    return lam[0]*sum([i*lam[i] for i in range(1, len(lam))])
+
+def SubSpecies(lam, k):
+    '''return all species of k-dim subspaces of a lambda-species vectorspace.
+
+TODO turn ths into an iterator
+    '''
+    assert (lam[0]).divides(k)
+    MAX = dim(lam)
+    all_tails = itertools.product(srange(MAX+1), repeat=len(lam)-1)
+    temp = []
+    for tail in all_tails:
+        mu = [lam[0]] + list(tail)
+        if is_subspecies(mu, lam) and dim(mu) == k:
+            temp.append(mu)
+    return temp
+
+
+def Frib_alpha(t, lam):
+    '''
+Fripertinger Lemma 5
+species lam = [deg u, lam1, lam2, ..., lamk]
+number of vectors of height t
+
+
+sage: Frib_alpha(1, [2,1])    # J_u^(1) for irreducible u of degree 2
+r^2 - 1                       # really? really! -- because height is dim/deg
+
+sage: Frib_alpha(1, [1,1])    # (a)
+r - 1
+
+sage: Frib_alpha(1, [1,2])    # diag(a, a)
+r^2 - _
+
+sage: Frib_alpha(1, [1,0,1])  # matrix([[a, 1], [0, a]]) = J_a^(2)
+r - 1
+sage: Frib_alpha(2, [1,0,1])
+r^2 - r
+
+'''
+    var('r')
+    assert t > 0    # alternatively, return 1 (namely the 0 vector)
+    m = lam[0]
+    Q = r^m
+    nu = sum(lam[t:])    # l_t
+    alpha = prod([Q^(i*lam[i]) for i in range(1,t)])
+    alpha *= (Q^t - Q^(t-1))/(Q - 1)
+    alpha *= Q^((t-1)*(nu-1))*(Q^nu - 1)
+    return alpha
+
+def Frib_beta(t, lam, nu):
+    '''
+Fripertinger Lemma 6
+vectorspace V with species lam and subvectorspace U with species nu
+
+count number of vectors not in U and of height exactly t
+
+sage: Frib_beta(1, [1,2], [1,2])
+0
+sage: Frib_beta(1, [1,2], [1,1])
+r^2 - r
+'''
+    var('r')
+    assert is_subspecies(nu, lam)
+    assert t > 0    # alternatively, return 1 (namely the 0 vector)
+    m = lam[0]
+    Q = r^m
+    k = len(lam) - 1    # maximal size of Jordan blocks
+    nuext = nu+(len(lam)-len(nu))*[0]
+    cofactor = Q^((t-1)*sum([lam[i]-nuext[i] for i in range(t, k+1)]))*prod([Q^(i*lam[i]) for i in
+                                                                          range(1, t)])
+    return Frib_alpha(t, lam) - Frib_alpha(t, nu)*cofactor
+
+
+
+def Frib_gamma(lam, mu):
+    '''return number of bases -- sorted by non-increasing height -- for a mu-species subspace in a lam-species ambient space.
+
+sage: Frib_gamma([1,1],[1,1])
+r - 1
+sage: Frib_gamma([1,2],[1,1])
+r^2 - 1
+'''
+    var('r')
+    assert is_subspecies(mu, lam)
+    nu = [mu[0]] + (len(mu) - 1)*[0]
+    s = sum(mu[1:])    # number of rational Jordan blocks
+    k = max([i for i in range(len(mu)) if mu[i] > nu[i]])
+    temp = Frib_alpha(k, lam)
+    nu[k] += 1    # nu1
+    for i in range(1, s):
+        knext = max([i for i in range(len(mu)) if mu[i] > nu[i]])
+        temp *= Frib_beta(knext, lam, nu)
+        nu[knext] += 1
+    return temp
+
+def numU(lam, k):
+    '''Fripertinger Theorem 2:
+
+given the species lam of an operator A on an Fr-vectorspace, return the number of k-dimensional A-invariant Fr-subvectorspaces.
+
+    assume for the moment that we deal with the a single eigenfactor, i.e.
+    '''
+    return (sum([Frib_gamma(lam, mu)/Frib_gamma(mu, mu) for mu in SubSpecies(lam, k)])).simplify_full()
+
+
+
 
 def coll_card(q):
     '''given the cardinality q of the ground field, this returns a four tuple of set cardinalities: subset of non-decomposable, max 1-collisions, max 2-collisions, and max r+1-collisions of polynomials over that ground field at degree p^2'''
@@ -101,8 +238,6 @@ def plot_exponent_simply(Q):
     G = list_plot(L)
     G.show()
 
-
-
 def plot_for_fixed_prime(p):
     L = []
     for e in range(1, 100):
@@ -131,8 +266,6 @@ def plot_rel_dec_for_3():
     G = list_plot(L)
     G.show()
 
-
-
 def plot_exponent_multiply(Q):
     L = []
     for q in prime_powers(3,Q):
@@ -140,21 +273,6 @@ def plot_exponent_multiply(Q):
     print L
     G = list_plot(L)
     G.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 def epsell(C2r):
     answer = [{}, {}, {}, {}]
