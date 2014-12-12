@@ -12,13 +12,16 @@ Input:
 - r :: prime power (optional, additivity of polynomials)
 
 Output:
-- Dd_n_q/Dd_n_q_r-add :: dict with (additive) decomposable f as keys and lists of complete decompositions as values [[g1,g2], [h1,h2,h3], ...]; purpose: decompose by table-lookup
-- D_n_q/D_n_q_r-add :: set of all decomposable f; purpose: recursion
-- C_n_q/C_n_q_r-add :: set of all 2-collisions to compare with explicit constructions like Ritt2 and Frob; purpose: check counting
+- Dd_n_q/Dd_n_q_r-add-sqf :: dict with (additive) decomposable f as keys and lists of complete decompositions as values [[g1,g2], [h1,h2,h3], ...]; purpose: decompose by table-lookup
+- D_n_q/D_n_q_r-add-sqf :: set of all decomposable f; purpose: recursion
+- C_n_q/C_n_q_r-add-sqf :: set of all 2-collisions to compare with explicit constructions like Ritt2 and Frob; purpose: check counting
 
 Usage:
 
     $ sage compose_by_brute_force.sage [degree n=6] [field size q=2] [with_decomp=true] [additivity r=1]
+
+Our experiments use |assert q.is_power_of(r)|, but the general situation does not require that.
+
 '''
 
 import sys, subprocess, itertools
@@ -42,7 +45,6 @@ if len(args) > 4:
     r = ZZ(args[4])
     if r > 1:
         only_additive = true
-        assert q.is_power_of(r)
         assert n.is_power_of(r)
         m = n.log(r)
 
@@ -159,7 +161,7 @@ def I(s, q, r=1):
             if m == 1:
                 return (x^r + a*x for a in F if a <> 0)
             else:
-                Dec = load('data/D_'+str(n)+'_'+str(q)+'_'+str(r)+'-add')
+                Dec = load('data/D_'+str(n)+'_'+str(q)+'_'+str(r)+'-add-sqf')
                 All = [x^n + sum([avec[i-1]*x^(r^i) for i in range(1,m)]) + a*x for avec in itertools.product(F, repeat = m - 1) for a in F if a <> 0]
                 return (f for f in All if f not in Dec)
         if n.is_prime():
@@ -215,7 +217,7 @@ def D(n, q, with_decomp=true, r=1):
 D = D(n, q, with_decomp=with_decomp, r=r)
 suffix = '_'+str(n)+'_'+str(q)
 if r > 1:
-    suffix += '_'+str(r)+'-add'
+    suffix += '_'+str(r)+'-add-sqf'
 print 'DONE with composition, now counting and storing the number.'
 if with_decomp:
     N = len(D)
