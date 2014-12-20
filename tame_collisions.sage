@@ -357,20 +357,19 @@ def graph_from_relations(DD):
 
     sage: G, dd0 = graph_from_relations([[2, 3, 5], [3, 5, 2], [5, 3, 2]])
     sage: G.show()
+    sage: G, dd0 = graph_from_relations([[12, 420], [14, 360]])
 
     '''
     DD = refined_closure(DD)
     dd0 = DD[0]
     m = len(dd0)
-    g0 = {j: srange(j) for j in srange(m)}    # init with relations from sigma_0 (dd0, dd0) = id(m)
+    g0 = {i: srange(i+1,m) for i in srange(m)}    # init with relations from sigma_0 (dd0, dd0) = id(m)
     for dd in DD:
         sigma = association(dd0, dd)
-        g = {sigma.index(j): [sigma.index(i) for i in srange(j)] for j in srange(m)}
+        g = {sigma.index(j): [sigma.index(k) for k in srange(j+1,m)] for j in srange(m)}
         g0 = {j: list(set(g0[j]) | set(g[j])) for j in g0}
     G = DiGraph(g0, multiedges=True, implementation='c_graph', vertex_labels=True)
     return G, dd0
-
-
 
 def dag(G):
     '''return underlying DAG for given strongly connected G.
