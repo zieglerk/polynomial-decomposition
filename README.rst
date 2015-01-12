@@ -22,7 +22,7 @@ add_count.sage
     implementation of the (wild) counting formulas of GGZ, also comparison with
     CoulterHavasHenderson2004
 
-add_coll.sage
+additive_collisions.sage
     determine all decompositions of additive polynomials via the rational Jordan
     form of the Frobenius on its root space
 
@@ -125,7 +125,7 @@ r = 4 => q = 16, n = 256
          q = 64, n = 4,(16?)
 r = 8 => q = 8, n = 8, 64
          q = 64, n = 8, 64
-	 
+
 r = 3 => q = 3, n = 3, 9, 27, 81, 243, 729
          q = 9, n = 3, 9, 27, 81
 	 q = 27, n = 3, 9, 27, 81
@@ -143,13 +143,13 @@ r = 7
 ==== === === === === === === === === === === === === === === === === ===
 n\q   2   3   4   5   7   8   9   11  13  16  25  27  32  64  81 125 625
 ==== === === === === === === === === === === === === === === === === ===
-2    2       2           2               2           2   2 
+2    2       2           2               2           2   2
 3        3                   3                   3
 4    2       2,4         2               2,4         2   2
 5                 5                          5
 8    2       2           2               2           2   2
 9        3                   3,9                 3            9
-16   2       2,4         2               2,4  
+16   2       2,4         2               2,4
 25                5                          5,25                    25
 27       3                   3                   3
 32   2       2           2
@@ -159,8 +159,8 @@ n\q   2   3   4   5   7   8   9   11  13  16  25  27  32  64  81 125 625
 128  2       2
 243      3
 256  2       4                           4
-512  2       
-625               5                          25                      EOM 
+512  2
+625               5                          25                      EOM
 729      3                   9
 1024 2       4
 2048 2
