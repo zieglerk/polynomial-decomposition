@@ -1,91 +1,108 @@
-************************
-Decomposable Polynomials
-************************
+*****************************************************
+Decomposing Univariate Polynomials over Finite Fields
+*****************************************************
 
-This Sage-module provides functions to study the decomposition of
-univariate polynomials over finite field. We measure the degree of our
-understanding by our ability to count the decomposables approximately
-and exactly. The crucial ingredient for any inclusion-exclusion formula to do so
-requires an understanding of collisions, that is of distinct decompositions of a
+This Python-module provides functions to study the functional
+decomposition of univariate polynomials over a finite field. We have
+the following fundamental distinctions.
+
+Tame case
+    where the polynomial's degree is coprime to the characteristic of
+    the base field.
+
+Wild case
+    where the polynomial's degree is a multiple of the characteristic
+    of the base field.
+
+Additive case
+    where all exponents of the polynomial are powers of the
+    characteristic of the base field; this is a special case of the
+    previous one.
+
+We measure the degree of our understanding by our ability to count the
+number of decomposable polynomials at a given degree. The crucial
+ingredient for the obvious inclusion-exclusion formula is an
+understanding of *collisions*, that is of distinct decompositions of a
 given polynomial.
 
 Submodules
 ==========
 
-tame_collisions.sage
-    determine the structure (and number) all tame collisions for a given a set of ordered factorizations
-
-compose_by_brute_force.sage
-    create look-up tables of complete factorizations; output to ./data/
-
 add_count.sage
-    implementation of the (wild) counting formulas of GGZ, also comparison with
-    CoulterHavasHenderson2004
+    for a basic additive case, this gives the exact
+    number of decomposable polynomials according to [GGZ10]_; also
+    comparison with the numbers of [CHH04]_.
 
 additive_collisions.sage
-    determine all decompositions of additive polynomials via the rational Jordan
-    form of the Frobenius on its root space
+    for the (general) additive case, this determines the number and
+    structure of all decompositions of an additive polynomial via the rational Jordan
+    form of the Frobenius on its root space; see [GGZ10]_ and [F11]_.
+
+compose_by_brute_force.sage
+    create look-up tables of complete decompositions (if feasible) or
+    count at least the number of decomposables; output to ./data/
 
 p2_decompose.sage
+    for the (basic) wild case, create dictionaries to classify
+    decompositions; see [BGZ13]_.
+
 p2_construct_collision_by_parameter.sage
-    TODO BGZ
+    for the (basic) wild case, create polynomials with a given number
+    of decompositions TODO
+
+tame_collisions.sage
+    for the tame case, determine the structure (and number) of all
+    tame collisions according to [Z14]_.
+
+
+Usage
+=====
+
+Load the module in your local Sage installation::
+
+   $ sage -q
+   sage: load('add_count.sage')
+
+See each module's documentation for further instructions.
 
 
 Output
 ======
 
-./TO_SORT--old
-    fifi*
-    /data/
-        - C
-        - D
-        - I
-        - P
-        - email n=25, q=5
-        - old for comparison incl. n=18, q=9 and more wild stuff
-     /report/
+Folder structure::
 
-./data/
-    - C_n_q.sobj
-    - D_n_q.sobj
-    - Dd_n_q.sobj
-    - Dtext_n_q.txt
-    - numbers.txt
+    ./data/
+        - C_n_q.sobj
+        - D_n_q.sobj
+        - Dd_n_q.sobj
+        - Dtext_n_q.txt
+        - numbers.txt
+
+For internal use::
+
+      ./TO_SORT--old
+        fifi*
+        /data/
+            - C
+            - D
+            - I
+            - P
+            - email n=25, q=5
+            - old for comparison incl. n=18, q=9 and more wild stuff
+         /report/
 
 
 Polynomials
 ===========
 
-dictionaries and sets of monic original polynomials at degree n over Fq
+tame dictionaries
+-----------------
 
-Q: store complete or incomplete decompositions
-A: we opt for complete, since this is the more refined picture
-
-Note: this requires testing for indecomposability of every component (maybe
-expensive); if that is too costly, simply loop over all polynomials, obtain
-all decompositions and write a post-processing procedure to "filter" the
-underlying indecomposable ones
-
-Experience: storing P_n_q or I_n_q is infeasible even for small values (like
-n=30, q=2).
-Consequence: store only D_n_q and C_n_q; produce I_n_q dynamically
-
-see ``compose_by_brute_force.sage`` for detailed specification
-
-- dict Dd_n_q    # if this computation runs out of memory -- maybe at least
-  counting is possible
-- set D_n_q vs. Dtext_n_q
-- set C_n_q
-
-prime powers q (up to 30)
-composite n (as large as possible)
-- level 1: n is prime DONE
-- level 2: n is product of two primes (maybe identical): 33, 35, 39, 49, 55, 65, 77, 91
-
-mark* all composites with more than 2 prime factors (counted with multiplicity)
+legend: Y (counting available), YY (counting and dictionary
+available), EOM (out of memory), EOT (out of time), NN (user abort), ? (untested)
 
 ====  === ===  ===  ===   ===
-n\q    2   3    4    5     7
+n\\q    2   3    4    5     7
 ====  === ===  ===  ===   ===
    4   Y   Y    Y    Y     Y
    6   Y   Y    Y    Y     Y
@@ -115,11 +132,15 @@ n\q    2   3    4    5     7
 105*  EOT       -
 125    ?   ?    ?          ?
 ====  === ===  ===  ===   ===
-1155
-2310
-====  === ===  ===  ===   ===
+
+Composite degrees with more than 2 prime factors (counted with
+multiplicity) are marked with \*.
+
 
 additive dictionaries
+---------------------
+
+suggestions:
 
 r = 4 => q = 16, n = 256
          q = 64, n = 4,(16?)
@@ -131,54 +152,101 @@ r = 3 => q = 3, n = 3, 9, 27, 81, 243, 729
 	 q = 27, n = 3, 9, 27, 81
 r = 9 => q = 9, n = 9, 81, 729
          q = 81, n = 9, 81
-r = 27
 
 r = 5 => q = 5, n = 5, 25, 125, 625
 	 q = 25, n = 5, 25, 125, 625?
 r = 25 =>q = 25, n = 25, 625, (3125?!)
          q = 625, n = 25, 625
 
-r = 7
+actual data:
 
-==== === === === === === === === === === === === === === === === === ===
-n\q   2   3   4   5   7   8   9   11  13  16  25  27  32  64  81 125 625
-==== === === === === === === === === === === === === === === === === ===
-2    2       2           2               2           2   2
-3        3                   3                   3
-4    2       2,4         2               2,4         2   2
+==== === === === === === === === === === === ==== === === === === === ===
+n\\q  2   3   4   5   7   8   9   11  13  16  25   27  32  64  81 125 625
+==== === === === === === === === === === === ==== === === === === === ===
+2    2       2           2               2            2   2
+3        3                   3                    3
+4    2       2,4         2               2,4          2   2
 5                 5                          5
-8    2       2           2               2           2   2
-9        3                   3,9                 3            9
+8    2       2           2               2            2   2
+9        3                   3,9                  3            9
 16   2       2,4         2               2,4
-25                5                          5,25                    25
-27       3                   3                   3
+25                5                          5,25                     25
+27       3                   3                    3
 32   2       2           2
 64   2       2,4                         4
-81       3                   3,9                              9
+81       3                   3,9                               9
 125               5                          5
 128  2       2
 243      3
 256  2       4                           4
 512  2
-625               5                          25                      EOM
+625               5                          25                       EOM
 729      3                   9
 1024 2       4
 2048 2
-==== === === === === === === === === === === === === === === === === ===
+==== === === === === === === === === === === ==== === === === === === ===
+
+
+Todos
+=====
+
+- add the formulas of [BGZ13]_ to ``p2_construct_collision_by_parameter.sage``
+
+
+Requirements
+============
+
+This code requires the free mathematical software [Sage]_ which is
+available for download at http://www.sagemath.org and as cloud service
+at https://cloud.sagemath.org. It has been tested under GNU/Linux with
+Sage 6.4.
+
 
 References
 ==========
 
-- Reinhold Burger and Albert Heinle, Diffie Hellman -- Non commutative version
-  http://github.com/ioah86/diffieHellmanNonCommutative.
+.. [BGZ13] Raoul Blankertz, Joachim von zur Gathen & Konstantin
+	   Ziegler (2013). Compositions and collisions at degree
+	   p\ :sup:`2`. *Journal of Symbolic Computation* **59**,
+	   113–145. ISSN 0747-7171. URL
+	   http://dx.doi.org/10.1016/j.jsc.2013.06.001. Also available
+	   at http://arxiv.org/abs/1202.5810.  Extended abstract in
+	   *Proceedings of the 2012 International Symposium on Symbolic
+	   and Algebraic Computation ISSAC ’12*, Grenoble, France
+	   (2012), 91–98.
 
-- Xavier Caruso, skew_polynomial
+.. [CHH04] Robert S. Coulter, George Havas & Marie Henderson
+	   (2004). On decomposition of sub-linearised
+	   polynomials. *Journal of the Australian Mathematical
+	   Society* **76**\(3), 317–328. URL
+	   http://dx.doi.org/10.1017/S1446788700009885.
 
-- Manuel Kauers and Maximilian Jaroschek and Fredrik Johansson, Ore Polynomials in
-  Sage, http://arxiv.org/abs/1306.4263v1.
+.. [F11] Harald Fripertinger (2011). The number of invariant subspaces
+	 under a linear operator on finite vector spaces. *Advances in
+	 Mathematics of Communications* **5**\(2), 407–416. ISSN
+	 1930-5346. URL http://dx.doi.org/10.3934/amc.2011.5.407.
 
-- W. A. Stein et al. (2014). Sage Mathematics Software (Version
-  6.3). The Sage Development Team. URL http://www.sagemath.org.
+.. [GGZ10] Joachim von zur Gathen, Mark Giesbrecht & Konstantin
+	   Ziegler (2010). Composition collisions and projective
+	   polynomials. Statement of results. In *Proceedings of the
+	   2010 International Symposium on Symbolic and Algebraic
+	   Computation ISSAC ’10*, Munich, Germany, edited by Stephen
+	   Watt, 123–130. ACM Press. URL
+	   http://dx.doi.org/10.1145/1837934.1837962. Preprint
+	   available at http://arxiv.org/abs/1005.1087.
+
+.. [Sage] W. A. Stein et al. (2014). Sage Mathematics Software
+  (Version 6.4). The Sage Development Team. URL
+  http://www.sagemath.org.
+
+
+.. [Z14] Konstantin Ziegler (2014). Tame decompositions and
+	 collisions. In *Proceedings of the 2014 International
+	 Symposium on Symbolic and Algebraic Computation ISSAC ’14*,
+	 Kobe, Japan, edited by Katsusuke Nabeshima, 421–428. ACM
+	 Press, Kobe, Japan. URL
+	 http://dx.doi.org/10.1145/2608628.2608653. Preprint available
+	 at http://arxiv.org/abs/1402.5945.
 
 
 Author
@@ -200,4 +268,4 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  If not, see http://www.gnu.org/licenses/.

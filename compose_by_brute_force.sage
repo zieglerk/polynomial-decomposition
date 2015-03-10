@@ -22,6 +22,32 @@ Usage:
 
 Our experiments use |assert q.is_power_of(r)|, but the general situation does not require that.
 
+dictionaries and sets of monic original polynomials at degree n over Fq
+
+Q: store complete or incomplete decompositions
+A: we opt for complete, since this is the more refined picture
+
+Note: this requires testing for indecomposability of every component (maybe
+expensive); if that is too costly, simply loop over all polynomials, obtain
+all decompositions and write a post-processing procedure to "filter" the
+underlying indecomposable ones
+
+Experience: storing P_n_q or I_n_q is infeasible even for small values (like
+n=30, q=2).
+Consequence: store only D_n_q and C_n_q; produce I_n_q dynamically
+
+see ``compose_by_brute_force.sage`` for detailed specification
+
+- dict Dd_n_q    # if this computation runs out of memory -- maybe at least
+  counting is possible
+- set D_n_q vs. Dtext_n_q
+- set C_n_q
+
+prime powers q (up to 30)
+composite n (as large as possible)
+- level 1: n is prime DONE
+- level 2: n is product of two primes (maybe identical): 33, 35, 39, 49, 55, 65, 77, 91
+
 '''
 
 import sys, subprocess, itertools
