@@ -33,7 +33,7 @@ add_count.sage
     number of decomposable polynomials according to [GGZ10]_; also
     comparison with the numbers of [CHH04]_.
 
-additive_collisions.sage
+add_decompose.sage
     for the (general) additive case, this determines the number and
     structure of all decompositions of an additive polynomial via the rational Jordan
     form of the Frobenius on its root space; see [GGZ10]_ and [F11]_.
