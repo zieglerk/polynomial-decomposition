@@ -27,7 +27,7 @@ p = 2
 e = 2
 r = p^e
 
-d = 1
+d = 2
 q = r^d    # @future: p^d
 
 assert p.is_prime()
@@ -40,6 +40,15 @@ eta = Fr.gen()
 # TODO Fq is field extension of Fr of degree d -- identify!
 Fq = GF(q, conway=True, prefix='z')
 theta = Fq.gen()
+
+'''
+Fr.<eta> = GF(5^2); L.<phi> = GF(5^6)
+PF.<t> = Fr[]
+f, g = prime_factors(PF(phi.minpoly())); f, g
+Fq.<theta> = Fr.extension(f)
+'''
+
+# Look at #11938 which is for coercion from one finite field to another. It needs a review. If you have the background, please review it. :)
 
 var('x, y')
 # no way to restrict to Fq[x; r], so we consider the whole ring Fq[x]
@@ -100,15 +109,10 @@ def invtau(F):
 def gcrc(f,g):
     return gcd(f,g)
 
-# MAJOR TODO
-# construction via division with remainder
-
 def rdiv_with_rem(f,g):
-    '''return (q, r) such that f = q o g + r and r minimal
-    CAVE: r = 0 is by definition not additive?!
-'''
+    '''return (q, r) such that f = q o g + r and r minimal.'''
     m = f.degree().log(r)
-    n = g.degree().log(q)
+    n = g.degree().log(r)
     if m < n:
         return (0, f)
     if m == n:
@@ -134,12 +138,48 @@ def rdiv_with_rem(f,g):
     assert f == quo.subs(g) + rem
     return (quo, rem)
 
-def ldiv_with_rem(f,g):
-    '''return q and r such that f = g o q + r'''
+# MAJOR TODO
+# construct mclc via division with remainder
+
+def linear_relation(polys):
+    '''for a list of additive polynomials form Fq[x; r] return a list of elements of coeffients from Fr (!) such that their scalar product is zero; return None if none exists.
+
+Since this list is built up incrementally, we assume that there is no linear relation amoung the first m-1 polynomials and we can set the coefficient for the last coefficent to 1.
+
+
+ until such a relation exists, we are assured that the kernel is either 0- or 1-dimensional. In other words, if we find a non-trivial linear relation, we have found all.
+'''
+    if R(0) in polys:
+        i = polys.index(R(0))
+        coeffs = [0] * len(polys)
+        coeffs[i] = R(1)
+        return coeffs
+    if len(polys) == 1:
+        '''single entry is nonzero due to previous if-clause.'''
+        return None
+
+
+def mclc(h):
+    '''return minimal monic central f, such that f = g o h for some g.
+
+You can then always the cofactor ''g'' via rdiv_with_rem(f,h)[0].
+'''
+    a = h.leading_coefficient()
+    n = h.degree().log(r)
+    if is_central(h/a):
+        return h/a
+    centrals = [x]
+    remainders = [x]
+    for j in srange(1, d*n+1):
+        cent = x^(q^j)
+        rem = rdiv_with_rem(cent, h)[1]
+        centrals += cent
+        remainders += rem
+        if linear_relation(remainders):
+            coeffs = linear_realtion(polys)
+            central = coeffs*central
     pass
 
-def mclc(f):
-    pass
 
 
 

@@ -29,13 +29,13 @@ Submodules
 ==========
 
 add_count.sage
-    for a basic additive case, this gives the exact
-    number of decomposable polynomials according to [GGZ10]_; also
-    comparison with the numbers of [CHH04]_.
+    for *all* additive polynomials this gives the exact number of
+    $k$-collisions and by inclusion-exclusion the number of
+    decomposables; see [GGZ10]_, compare to [CHH04]_.
 
 add_decompose.sage
-    for the (general) additive case, this determines the number and
-    structure of all decompositions of an additive polynomial via the rational Jordan
+    for a *single* additive polynomial, this determines the structure
+    of (the lattice of) right components via the rational Jordan
     form of the Frobenius on its root space; see [GGZ10]_ and [F11]_.
 
 compose_by_brute_force.sage
