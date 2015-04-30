@@ -1,69 +1,62 @@
-# try this with Maple's with(oretools)
-# discarded RISC's ore_algebra, since they only allow prime fields
-# for reference: you should have delta = 0 and sigma = r-th power
+# related packages:
+# - Maple's with(oretools) :: TODO
+# - RISC's ore_algebra :: use delta = 0 and sigma = r-th power; fails since only prime fields allowed
 
 '''
 For a *single* additive polynomial, we answer two questions.
-(i) How many right components of a given exponent?
-(ii) How many complete decompositions?
+(i) How many right components of a given exponent exist?
+(ii) How many complete decompositions exist?
 
 Approach
-0. assume squarefree
+0. assume monic squarefree
 1. compute RationalJordanForm (and its species) a la GathenGiesbrechtZiegler
 2. use Fripertinger on species to return
    a) generating function for subspace numbers answering (i)
    b) number of chains in subspace lattice answering (ii)
-3. reduce general case to squarefree
+3. reduce general case to assumptions in 0.
 
-Language/design decision:
+Language/design options:
 1. use "skew multiplication language"
 2. use "additive composition language"
-In the interest of keeping compatibility with the other packages in the module, we opt for 2.
+We opt for 2. in the interest of compatibility with the other packages in the module.
 
 '''
+
+import itertools
 
 p = 2
 
 e = 2
 r = p^e
 
-d = 2
+d = 2      # TODO fix coercion error if d > 1; Fq is field extension of Fr of degree d -- identify!
+# Look at #11938 which is for coercion from one finite field to another. It needs a review. If you have the background, please review it. :)
 q = r^d    # @future: p^d
 
 assert p.is_prime()
 assert r.is_power_of(p)
 assert q.is_power_of(r)
 
-var('theta', 'eta')
-Fr = GF(r, conway=True, prefix='z')
-eta = Fr.gen()
-# TODO Fq is field extension of Fr of degree d -- identify!
-Fq = GF(q, conway=True, prefix='z')
-theta = Fq.gen()
-
-'''
-Fr.<eta> = GF(5^2); L.<phi> = GF(5^6)
-PF.<t> = Fr[]
-f, g = prime_factors(PF(phi.minpoly())); f, g
-Fq.<theta> = Fr.extension(f)
-'''
-
-# Look at #11938 which is for coercion from one finite field to another. It needs a review. If you have the background, please review it. :)
+Fr = GF(r, conway=True, prefix='z')    # smaller field
+Fq = GF(q, conway=True, prefix='z')    # field extension
 
 var('x, y')
-# no way to restrict to Fq[x; r], so we consider the whole ring Fq[x]
+# no way to restrict to Fq[x; r], so we consider the whole ring R = Fq[x]
 R.<x> = PolynomialRing(Fq, x)
-# commutative image Fr[y] of the centre Fr[x; q]
+# its centre is Fr[x; q] with commutative image S = Fr[y]
 S.<y> = PolynomialRing(Fr, y)
 
 def is_additive(f):
     '''
 sage: is_additive(0)
 True
-sage: is_additive(R(1))
+sage: is_additive(1)
 False
+sage: is_additive(x)
+True
 '''
     assert f in R
+    f = R(f)
     if f == 0:
         return True
     if f.degree() == 0:
@@ -74,7 +67,16 @@ False
     return True
 
 def is_central(f):
-    '''TODO maybe faster check over all monomials via dictionary'''
+    '''TODO maybe faster check over all monomials via dictionary
+sage: q, r
+(16, 4)
+sage: is_additive(x^4)
+True
+sage: is_central(x^4)
+False
+sage: is_central(x^16)
+True
+'''
     assert is_additive(f)
     for m in f.exponents():
         if not ZZ(m).is_power_of(q):
@@ -85,7 +87,8 @@ def is_central(f):
     return True
 
 def tau(f):
-    '''maps additive polynomials in the centre Fr[x; q] to their commutative image Fr[y]'''
+    '''maps additive polynomials in the centre Fr[x; q] of R = Fq[x; r] to their commutative image S = Fr[y]'''
+    assert f in R
     f = R(f)
     assert is_central(f)
     n = f.degree().log(r)
@@ -96,13 +99,14 @@ def tau(f):
     return F
 
 def invtau(F):
-    '''inverse map of tau'''
+    '''inverse map of tau, taking a polynomial from S = Fr[y] and mapping it to (the centre of) R = Fq[x; r]'''
+    assert F in S
     F = S(F)
     n = F.degree()
     f = R(0)
     coefficients = F.coeffs()
     for i in srange(n+1):
-        f += coefficients[i]*x^(r^i)
+        f += coefficients[i]*x^(q^i)
     assert is_central(f)
     return f
 
@@ -138,26 +142,38 @@ def rdiv_with_rem(f,g):
     assert f == quo.subs(g) + rem
     return (quo, rem)
 
-# MAJOR TODO
-# construct mclc via division with remainder
+def dot_product(polys, scalars):
+    return sum(p*a for p, a in zip(polys, scalars))
 
 def linear_relation(polys):
     '''for a list of additive polynomials form Fq[x; r] return a list of elements of coeffients from Fr (!) such that their scalar product is zero; return None if none exists.
 
-Since this list is built up incrementally, we assume that there is no linear relation amoung the first m-1 polynomials and we can set the coefficient for the last coefficent to 1.
+Since this list is built up incrementally, we assume that there is no linear relation amoung the first m-1 polynomials and we can set the last scalar to 1.
 
+sage: linear_relation([0])
+[1]
+sage: linear_relation([x, x^2])
+sage: linear_relation([x, x^2, x^2+x])
+(1, 1, 1)
 
- until such a relation exists, we are assured that the kernel is either 0- or 1-dimensional. In other words, if we find a non-trivial linear relation, we have found all.
 '''
     if R(0) in polys:
         i = polys.index(R(0))
         coeffs = [0] * len(polys)
         coeffs[i] = R(1)
         return coeffs
-    if len(polys) == 1:
+    m = len(polys)
+    if m == 1:
         '''single entry is nonzero due to previous if-clause.'''
         return None
+    for head in itertools.product(Fr, repeat=m - 1):
+        scalars = head + (R(1),)
+        if dot_product(polys, scalars) == R(0):
+            return scalars
+    return None
 
+# MAJOR TODO
+# construct mclc via division with remainder
 
 def mclc(h):
     '''return minimal monic central f, such that f = g o h for some g.
@@ -176,26 +192,24 @@ You can then always the cofactor ''g'' via rdiv_with_rem(f,h)[0].
         centrals += cent
         remainders += rem
         if linear_relation(remainders):
-            coeffs = linear_realtion(polys)
-            central = coeffs*central
-    pass
-
-
-
+            coeffs = linear_relation(polys)
+            central = dot_product(coeffs, centrals)
+            return central
+    print 'Warning! No bound found in due time.'
 
 def random_additive(n):
     '''return random monic additive polynomial of exponent n. TODO optional: squarefree'''
     F = y^n + S.random_element(degree=n-1)    # monic skew -> monic original add
     return invtau(F)
 
-F = y+3*theta
-G = y+theta^2+2*theta
+F = y+3*eta
+G = y+eta^2+2*eta
 f = invtau(F)
 g = invtau(G)
 print f, g
 print gcrc(f, g)
 
-n = 5
+n = 2
 f = random_additive(n)
 g = random_additive(n-2)
 print f, g
