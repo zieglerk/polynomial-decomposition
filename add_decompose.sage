@@ -87,7 +87,14 @@ True
     for a in f.coefficients():
         if not a in Fr:
             return False
-    return True
+        return True
+
+def centralize(f):
+    '''the coefficients of a central polynomial may be written with the generator of the larger field. We don't want that.'''
+    assert is_central(f)
+    F = PolynomialRing(Fr, x)(f)
+    assert f == F
+    return F
 
 def tau(f):
     '''maps additive polynomials in the centre Fr[x; q] of R = Fq[x; r] to their commutative image S = Fr[y]'''
@@ -181,6 +188,11 @@ def mclc(h):
     '''return minimal monic central f, such that f = g o h for some g.
 
 You can then always the cofactor ''g'' via rdiv_with_rem(f,h)[0].
+
+remainders have at most n coefficients from Fq, thus dimension n*d over Fr.
+
+d*n+1 remainders suffice for a non-trivial relations and we take x^(q^j) for j = 0, ..., n*d
+
 '''
     a = h.leading_coefficient()
     n = h.degree().log(r)
@@ -196,6 +208,7 @@ You can then always the cofactor ''g'' via rdiv_with_rem(f,h)[0].
         if linear_relation(remainders):
             coeffs = linear_relation(remainders)
             central = dot_product(coeffs, centrals)
+            central = centralize(central)
             return central
     print 'Warning! No bound found in due time.'
 
