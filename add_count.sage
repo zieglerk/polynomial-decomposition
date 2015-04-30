@@ -1,4 +1,4 @@
-'''This module offers counting functions for the decomposition of additive polynomials.
+'''This module counts the number of decomposable additive polynomials.
 
 For a given additive polynomial f of degree r^n, we ask for the number of right components of f that have degree r^d. The possible numbers follow a pattern that allow only for a selected few values. For example, for additive polynomials of degree r^2, we may only have 0, 1, 2, or r+1 right components of degree r.
 
@@ -40,7 +40,6 @@ For comparison/testing, see the exact formula of BlankertzGathenZiegler and the 
 | 5, 25 |  389905 |
 
 '''
-
 
 
 
@@ -105,6 +104,11 @@ Note: this automatically excludes additive collisions, since multiply original, 
     M[2] = (p-3)*q*(q-1)*(q-2)/4
     return M
 
+
+
+
+
+
 def count_dict(C, q):
     '''given a dictionary of the form {f1: [[g11,h11],[g12,h12]], f2: ... } we want to return a 4-tuple of [0, 1, 2, r+1]-collisions'''
     N = [0]*4
@@ -120,10 +124,20 @@ def count_dict(C, q):
             print 'Warning: non-Bluher collision', f, C[f]
     return N
 
+
+
 def print_para_coll(C, q):
     for f in C:
         if len(C[f])>1:
             print f, para(f)
+
+
+
+
+
+
+
+
 
 def plot_exponent_simply(Q):
     L = []
@@ -169,6 +183,15 @@ def plot_exponent_multiply(Q):
     G = list_plot(L)
     G.show()
 
+
+
+
+
+
+
+
+
+
 def epsell(C2r):
     answer = [{}, {}, {}, {}]
     for f in C2r:
@@ -204,6 +227,11 @@ def bluher_count(q,r,i):
             count = (q-1)*(q-r)/(r*(r^2-1))
     return count
 
+
+
+
+
+
 def lower_bound(q,r,i):
     gamma = gcd(r+1, q-1)
     delta = kronecker_delta(gamma,i)
@@ -213,6 +241,9 @@ def lower_bound(q,r,i):
     e1lr1 = bluher_count(q,r,i) # epsilon = 1, ell = r-1
     e1ll = q*bluher_count(q,r,i)*(d-1) # epsilon = 1, ell < r-1
     return e0lr1, e0ll, e1lr1, e1ll
+
+
+
 
 def para(f):
     deg2 = (f.truncate(r^2)).degree()
@@ -224,11 +255,15 @@ def para(f):
         ell = (r^2 - deg2)/(r+1)
     return eps, ell
 
+
+
+
+
 def main():
     global q, p, r
     global y, K, x, R, Z
 
-    for q in range(3,4):
+    for q in range(3, 4):
         if q==1 or not is_prime_power(q):
             continue
         init(q)
@@ -245,6 +280,9 @@ def main():
         Cr1_para = epsell(Cr1)
         print C2_para, map(len, C2_para), lower_bound(q,r,2)
         print Cr1_para, map(len, Cr1_para), lower_bound(q,r,r+1)
+
+
+
 
 
 
@@ -470,31 +508,12 @@ print T
 
 '''
 
-
-# Bonus: Count a la Odoni1999
-# number of indecomposable p-additives over Fq with exponent d (Theorem 1, p.~7)
-# N[1] = q (q-1)
-# N[d] = d^(-1) (p^d-1)^(-1) (q-1) (q^d-1) sum_{e \mid d} mu (e/d) p^e.
-
-# Bonus: Count a la CoulterHavasHenderson2004
+# Summary: Our numbers
+######################
 #
 # # we start with additive polynomials at degree p^2 over a field of size q
 # # we restrict to monic polynomials
 #
-# def A(q):
-#     '''total number of p-additive polynomials at degree p^2 over a field of size q; not normalized'''
-#     return q^2
-#
-# def MoebiusSum(p,n):
-#     return sum([moebius(n/d)*p^d for d in n.divisors()])/n
-#
-# def IOdoni(q):
-#     p = q.factor()[0][0]
-#     return (q^2-1)/(p^2-1) * MoebiusSum(p,2)
-#
-# def DOdoni(q):
-#     '''decomposable p-additive polynomails at degree p^2 over a field of size q; no normalization'''
-#     return A(q) - IOdoni(q)
 #
 # def IGGZ(q):
 #     p = q.factor()[0][0]
@@ -517,7 +536,42 @@ print T
 # def IGGZ2(q):
 #     '''number of indecomposable Susem's, where m=1;  this should be'''
 #     pass
+
+
+
+# For Reference: Numbers a la Odoni1999
+#######################################
 #
+# number of indecomposable p-additives over Fq with exponent d (Theorem 1, p.~7)
+# N[1] = q*(q-1)
+# N[d] = d^(-1) (p^d-1)^(-1) (q-1) (q^d-1) sum_{e \mid d} mu (e/d) p^e.
+
+# def A(q):
+#     '''total number of p-additive polynomials at degree p^2 over a field of size q; not normalized'''
+#     '''TODO *no* normalization should give (q-1)*q^2?!'''
+#     return q^2
 #
-# for q in prime_powers(2,10):
+# def MoebiusSum(p,n):
+#     return sum([moebius(n/d)*p^d for d in n.divisors()])/n
+#
+# def IOdoni(q):
+#     p = q.factor()[0][0]
+#     return (q^2-1)/(p^2-1) * MoebiusSum(p,2)
+#
+# def DOdoni(q):
+#     '''decomposable p-additive polynomails at degree p^2 over a field of size q; no normalization'''
+#     return A(q) - IOdoni(q)
+
+
+
+# For Reference: Count a la CoulterHavasHenderson2004
+#####################################################
+# TODO
+
+
+
+# For comparision/as test:
+##########################
+#
+#  for q in prime_powers(2,10):
 #     print q, A(q), DOdoni(q), DGGZ(q)
