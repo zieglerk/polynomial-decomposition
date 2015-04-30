@@ -198,9 +198,13 @@ You can then always the cofactor ''g'' via rdiv_with_rem(f,h)[0].
     print 'Warning! No bound found in due time.'
 
 def random_additive(n):
-    '''return random monic additive polynomial of exponent n. TODO optional: squarefree'''
+    '''return random monic r-additive polynomial of exponent n. TODO optional: squarefree'''
     F = y^n + S.random_element(degree=n-1)    # monic skew -> monic original add
-    return invtau(F)
+    f = x^(r^n)
+    for i in srange(n):
+        f += Fq.random_element()*x^(r^i)
+    assert is_additive(f)
+    return f
 
 F = y+3*eta
 G = y+eta^2+2*eta
