@@ -24,7 +24,7 @@ We opt for 2. in the interest of compatibility with the other packages in the mo
 
 import itertools
 
-p = 2
+p = 3
 
 e = 2
 r = p^e
@@ -37,8 +37,11 @@ assert p.is_prime()
 assert r.is_power_of(p)
 assert q.is_power_of(r)
 
+var('eta', 'theta')
 Fr = GF(r, conway=True, prefix='z')    # smaller field
 Fq = GF(q, conway=True, prefix='z')    # field extension
+eta = Fr.gen()
+theta = Fq.gen()
 
 var('x, y')
 # no way to restrict to Fq[x; r], so we consider the whole ring R = Fq[x]
@@ -113,8 +116,10 @@ def invtau(F):
 def gcrc(f,g):
     return gcd(f,g)
 
-def rdiv_with_rem(f,g):
+def rdiv_with_rem(f, g):
     '''return (q, r) such that f = q o g + r and r minimal.'''
+    if f == R(0):
+        return (0, 0)
     m = f.degree().log(r)
     n = g.degree().log(r)
     if m < n:
@@ -172,9 +177,6 @@ sage: linear_relation([x, x^2, x^2+x])
             return scalars
     return None
 
-# MAJOR TODO
-# construct mclc via division with remainder
-
 def mclc(h):
     '''return minimal monic central f, such that f = g o h for some g.
 
@@ -189,10 +191,10 @@ You can then always the cofactor ''g'' via rdiv_with_rem(f,h)[0].
     for j in srange(1, d*n+1):
         cent = x^(q^j)
         rem = rdiv_with_rem(cent, h)[1]
-        centrals += cent
-        remainders += rem
+        centrals += [cent]
+        remainders += [rem]
         if linear_relation(remainders):
-            coeffs = linear_relation(polys)
+            coeffs = linear_relation(remainders)
             central = dot_product(coeffs, centrals)
             return central
     print 'Warning! No bound found in due time.'
