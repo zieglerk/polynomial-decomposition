@@ -24,7 +24,7 @@ We opt for 2. in the interest of compatibility with the other packages in the mo
 
 import itertools
 
-p = 3
+p = 2
 
 e = 2
 r = p^e
@@ -97,19 +97,33 @@ def centralize(f):
     return F
 
 def tau(f):
-    '''maps additive polynomials in the centre Fr[x; q] of R = Fq[x; r] to their commutative image S = Fr[y]'''
+    '''maps additive polynomials in the centre Fr[x; q] of R = Fq[x; r] to their commutative image S = Fr[y]
+r = 2^2
+q = 2^4
+f = x^16 + x
+sage: tau(f)
+y + y
+'''
     assert f in R
     f = R(f)
     assert is_central(f)
-    n = f.degree().log(r)
+    n = f.degree().log(q)
     F = S(0)
     coefficients = f.coeffs()
     for i in srange(n+1):
-        F += coefficients[r^i]*y^i
-    return F
+        F += coefficients[q^i]*y^i
+    return S(F)
 
 def invtau(F):
-    '''inverse map of tau, taking a polynomial from S = Fr[y] and mapping it to (the centre of) R = Fq[x; r]'''
+    '''inverse map of tau, taking a polynomial from S = Fr[y] and mapping it to (the centre of) R = Fq[x; r]
+
+r = 2^2
+q = 2^4
+F = y+1
+sage: invtau(F)
+x^16 + x
+
+'''
     assert F in S
     F = S(F)
     n = F.degree()
@@ -118,9 +132,15 @@ def invtau(F):
     for i in srange(n+1):
         f += coefficients[i]*x^(q^i)
     assert is_central(f)
-    return f
+    return PolynomialRing(Fr, x)(f)
 
 def gcrc(f,g):
+    assert is_additive(f)
+    assert is_additive(g)
+    if f == R(x):
+        return R(x)
+    if g == R(x):
+        return R(x)
     return gcd(f,g)
 
 def rdiv_with_rem(f, g):
@@ -225,34 +245,135 @@ F = y+3*eta
 G = y+eta^2+2*eta
 f = invtau(F)
 g = invtau(G)
-print f, g
-print gcrc(f, g)
+print "Two central polynomials", f, g
+print "and their grcrc", gcrc(f, g)
+
+n = 4
+f = random_additive(n)
+g = random_additive(n-2)
+print "Two random additive polynomials", f, g
+quo, rem = rdiv_with_rem(f,g)
+print "and their quotient and remainder (checked)", quo, rem, f == quo.subs(g) + rem
 
 n = 2
 f = random_additive(n)
-g = random_additive(n-2)
-print f, g
-quo, rem = rdiv_with_rem(f,g)
-print quo, rem, f == quo.subs(g) + rem
+g = random_additive(n+1)
+h = random_additive(n+2)
+print "A random additive", f
+# F = mclc(f)
+# print "and its mclc", F
 
 
 
 
 
 
+def RJF(f):
+    '''following Algorithm 4.10 (algo:ratJNF) of GathenGiesbrechtZiegler2015.
+
+# one rational Jordan block of size 2
+sage: f = x^16 + (theta^2 + 1)*x
+sage: RJF(f)
+[     0 z2 + 1]
+[     1      1]
+
+sage: f = x^16 + (z4^3 + z4^2 + 1)*x
+sage: RJF(f)
+[ 0 z2]
+[ 1 z2]
+
+
+# two distinct rational Jordan blocks of size 1 each
+sage: f = x^16 + (theta^3 + 1)*x^4 + (theta^2 + theta + 1)*x
+sage: RJF(f)
+[ 1| 0]
+[--+--]
+[ 0|z2]
+
+sage: f = x^16 + z4^2*x^4 + (z4^3 + z4)*x
+sage: RJF(F)
+[    z2|     0]
+[------+------]
+[     0|z2 + 1]
 
 
 
-def RJF(f, q, r):
-    # check input assertions
-    assert is_monic(f)
-    assert is_squarefree(f)
+# twice the same rational Jordan block of size 1
+
+sage: f = x^16
+sage: RJF(f)
+[0|0]
+[-+-]
+[0|0]
+sage: f = x^16 + x
+sage: RJF(f)
+[1|0]
+[-+-]
+[0|1]
+
+Uk is (y + z2 + 1) * (y^2 + y + z2 + 1)
+[z2 + 1|     0      0]
+[------+-------------]
+[     0|     0 z2 + 1]
+[     0|     1      1]
+sage: f
+x^64 + (z4^2 + 1)*x^16 + (z4 + 1)*x^4 + (z4^3 + z4 + 1)*x
+
+
+
+
+
+
+f = random_additive(3); RJF(f)
+Uk is (y + z2) * (y + z2 + 1)^2
+[    z2|     0      0]
+[------+-------------]
+[     0|z2 + 1      1]
+[     0|     0 z2 + 1]
+sage: f
+x^64 + (z4^3 + z4^2 + z4 + 1)*x^16 + (z4^3 + z4^2 + z4)*x^4 + (z4^2 + z4)*x
+
+
+    TODO add squarefreness assertion
+    '''
+    # assert is_squarefree(f)
     assert is_additive(f)
-    pass
-    n = expn(f)
-    return block_diagonal_matrix(rat_jordan_block(u1,e11), rat_jordan_block(u1,e12), ...)
+    fstar = mclc(f)
+    minpoly = tau(fstar).factor()
+    print 'minpoly is', minpoly
+    t = len(minpoly)
+    D = []
+    for i in srange(t):
+        print "deal with factor number", i
+        u = minpoly[i][0]
+        k = minpoly[i][1]
+        nu = []
+        for j in srange(0, k + 2):
+            h = gcrc(f, invtau(u^j))
+            nu.append(h.degree().log(r))
+        m = u.degree()
+        for j in srange(1, k + 1):
+            lam = (2*nu[j] - nu[j - 1] - nu[j + 1]).divide_knowing_divisible_by(m)
+            D = D + [rat_jordan_block(u, j)] *lam
+            print "state of diagonal", D
+    return block_diagonal_matrix(D)
 
 def rat_jordan_block(u, e):
+    '''produce a rational Jordan block for u with multiplicity e.
+
+sage: r = 3^2
+sage: q = 3^4
+sage: rat_jordan_block(y + 1, 2)
+/home/zieglerk/local/share/sage/src/bin/sage-ipython:287: DeprecationWarning: invocation of block_matrix with just a list whose length is a perfect square is deprecated. See the documentation for details.
+[2 1]
+[0 2]
+sage: M = rat_jordan_block(y^2 + 1, 2)
+[0 2 1 0]
+[1 0 0 1]
+[0 0 0 2]
+[0 0 1 0]
+
+'''
     assert u.is_monic()
     # assert u.is_irreducible()
     C = companion_matrix(u)
@@ -276,8 +397,6 @@ def rat_jordan_block(u, e):
 
 
 
-
-import itertools
 
 def is_subspecies(mu, lam):
     '''check if mu is a subspecies of lam. Using the criterion of Fripertinger, Theorem 3.
