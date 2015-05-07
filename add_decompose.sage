@@ -29,8 +29,7 @@ p = 2
 e = 2
 r = p^e
 
-d = 2      # TODO fix coercion error if d > 1; Fq is field extension of Fr of degree d -- identify!
-# Look at #11938 which is for coercion from one finite field to another. It needs a review. If you have the background, please review it. :)
+d = 2
 q = r^d    # @future: p^d
 
 assert p.is_prime()
@@ -38,15 +37,15 @@ assert r.is_power_of(p)
 assert q.is_power_of(r)
 
 var('eta', 'theta')
-Fr = GF(r, conway=True, prefix='z')    # smaller field
-Fq = GF(q, conway=True, prefix='z')    # field extension
-eta = Fr.gen()
-theta = Fq.gen()
+Fr = GF(r, conway=True, prefix='z')    # ground field ...
+eta = Fr.gen()                         # ... and its generator
+Fq = GF(q, conway=True, prefix='z')    # field extension ...
+theta = Fq.gen()                       # ... and its generator
 
 var('x, y')
-# no way to restrict to Fq[x; r], so we consider the whole ring R = Fq[x]
+# no way to restrict to the additives Fq[x; r], so we consider the whole ring R = Fq[x]
 R.<x> = PolynomialRing(Fq, x)
-# its centre is Fr[x; q] with commutative image S = Fr[y]
+# the centre of Fq[x; r] is Fr[x; q] with commutative image S = Fr[y]
 S.<y> = PolynomialRing(Fr, y)
 
 def is_additive(f):
@@ -232,41 +231,23 @@ d*n+1 remainders suffice for a non-trivial relations and we take x^(q^j) for j =
             return central
     print 'Warning! No bound found in due time.'
 
-def random_additive(n):
-    '''return random monic r-additive polynomial of exponent n. TODO optional: squarefree'''
+def random_additive(n, squarefree=False, central=False):
+    '''return random monic r-additive polynomial of exponent n.
+
+    options:
+    - squarefree (default: False)
+    - central (default: False)
+'''
     F = y^n + S.random_element(degree=n-1)    # monic skew -> monic original add
     f = x^(r^n)
     for i in srange(n):
-        f += Fq.random_element()*x^(r^i)
+        coeff = Fq.random_element()
+        if i == 0 and squarefree:
+            while coeff == 0:
+                coeff = Fq.random_element()
+        f += coeff*x^(r^i)
     assert is_additive(f)
     return f
-
-F = y+3*eta
-G = y+eta^2+2*eta
-f = invtau(F)
-g = invtau(G)
-print "Two central polynomials", f, g
-print "and their grcrc", gcrc(f, g)
-
-n = 4
-f = random_additive(n)
-g = random_additive(n-2)
-print "Two random additive polynomials", f, g
-quo, rem = rdiv_with_rem(f,g)
-print "and their quotient and remainder (checked)", quo, rem, f == quo.subs(g) + rem
-
-n = 2
-f = random_additive(n)
-g = random_additive(n+1)
-h = random_additive(n+2)
-print "A random additive", f
-# F = mclc(f)
-# print "and its mclc", F
-
-
-
-
-
 
 def RJF(f):
     '''following Algorithm 4.10 (algo:ratJNF) of GathenGiesbrechtZiegler2015.
@@ -388,6 +369,35 @@ sage: M = rat_jordan_block(y^2 + 1, 2)
         offlist += [I] + [O]*e
     offdiag = block_matrix(offlist, subdivide=False)
     return diag + offdiag
+
+
+
+
+F = y+3*eta
+G = y+eta^2+2*eta
+f = invtau(F)
+g = invtau(G)
+print "Two central polynomials", f, g
+print "and their grcrc", gcrc(f, g)
+
+n = 4
+f = random_additive(n)
+g = random_additive(n-2)
+print "Two random additive polynomials", f, g
+quo, rem = rdiv_with_rem(f,g)
+print "and their quotient and remainder (checked)", quo, rem, f == quo.subs(g) + rem
+
+n = 2
+f = random_additive(n)
+g = random_additive(n+1)
+h = random_additive(n+2)
+print "A random additive", f
+# F = mclc(f)
+# print "and its mclc", F
+
+# WORKINGMARK
+
+
 
 
 
