@@ -237,12 +237,21 @@ def random_additive(n, squarefree=False, central=False):
     options:
     - squarefree (default: False)
     - central (default: False)
-'''
-    F = y^n + S.random_element(degree=n-1)    # monic skew -> monic original add
+
+    target degree r^n = q^(n * log_q r) = q^(n/d)
+    '''
+    if central:
+        d = q.log(r)
+        if d == 1:
+            return random_additive(n, squarefree=squarefree)
+        assert not squarefree, "the target degree r^n is not a power of q"
+        m = n.divide_knowing_divisible_by(d)
+        F = y^m + S.random_element(degree=m-1)
+        return invtau(F)
     f = x^(r^n)
     for i in srange(n):
         coeff = Fq.random_element()
-        if i == 0 and squarefree:
+        if squarefree and i == 0:
             while coeff == 0:
                 coeff = Fq.random_element()
         f += coeff*x^(r^i)
