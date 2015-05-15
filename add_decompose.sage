@@ -88,6 +88,12 @@ True
             return False
         return True
 
+
+def is_squarefree(f):
+    assert is_additve(f)
+    f.derivative(x)
+    return True if f.derivative().substitute(x=0) == 0 else False
+
 def centralize(f):
     '''the coefficients of a central polynomial may be written with the generator of the larger field. We don't want that.'''
     assert is_central(f)
@@ -258,8 +264,10 @@ def random_additive(n, squarefree=False, central=False):
     assert is_additive(f)
     return f
 
-def RJF(f):
-    '''following Algorithm 4.10 (algo:ratJNF) of GathenGiesbrechtZiegler2015.
+def RJF(f, species=False):
+    '''following Algorithm 4.10 (algo:ratJNF) of GathenGiesbrechtZiegler2015, we compute the rational RJF of the Frobenius automorphism on the root space of f. Return type: matrix
+
+Optionally, we return only the species of the rational Jordan form. Return type: list of lists [[deg u_1, lambda_11, lambda_12, ..., lambda_1k_1], [deg u_2, lambda_21, lambda_22, ..., lambda_2k_2], ...]
 
 # one rational Jordan block of size 2
 sage: f = x^16 + (theta^2 + 1)*x
