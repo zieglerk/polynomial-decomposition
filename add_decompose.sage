@@ -90,9 +90,15 @@ True
 
 
 def is_squarefree(f):
-    assert is_additve(f)
-    f.derivative(x)
-    return True if f.derivative().substitute(x=0) == 0 else False
+    '''sage: is_squarefree(x^4)
+False
+sage: is_squarefree(x)
+True
+sage: is_squarefree(x^4 + x)
+True
+'''
+    assert is_additive(f)
+    return (f.derivative().substitute(x=0) != 0)
 
 def centralize(f):
     '''the coefficients of a central polynomial may be written with the generator of the larger field. We don't want that.'''
@@ -294,8 +300,6 @@ sage: RJF(F)
 [------+------]
 [     0|z2 + 1]
 
-
-
 # twice the same rational Jordan block of size 1
 
 sage: f = x^16
@@ -317,11 +321,6 @@ Uk is (y + z2 + 1) * (y^2 + y + z2 + 1)
 sage: f
 x^64 + (z4^2 + 1)*x^16 + (z4 + 1)*x^4 + (z4^3 + z4 + 1)*x
 
-
-
-
-
-
 f = random_additive(3); RJF(f)
 Uk is (y + z2) * (y + z2 + 1)^2
 [    z2|     0      0]
@@ -331,10 +330,8 @@ Uk is (y + z2) * (y + z2 + 1)^2
 sage: f
 x^64 + (z4^3 + z4^2 + z4 + 1)*x^16 + (z4^3 + z4^2 + z4)*x^4 + (z4^2 + z4)*x
 
-
-    TODO add squarefreness assertion
     '''
-    # assert is_squarefree(f)
+    assert is_squarefree(f)
     assert is_additive(f)
     fstar = mclc(f)
     minpoly = tau(fstar).factor()
