@@ -4,8 +4,8 @@
 
 '''
 For a *single* additive polynomial, we answer two questions.
-(i) How many right components of a given exponent exist?
-(ii) How many complete decompositions exist?
+(Q1) How many right components of a given exponent exist?
+(Q2) How many complete decompositions exist?
 
 Approach
 0. assume monic squarefree
@@ -270,89 +270,6 @@ def random_additive(n, squarefree=False, central=False):
     assert is_additive(f)
     return f
 
-def RJF(f, species=False):
-    '''following Algorithm 4.10 (algo:ratJNF) of GathenGiesbrechtZiegler2015, we compute the rational RJF of the Frobenius automorphism on the root space of f. Return type: matrix
-
-Optionally, we return only the species of the rational Jordan form. Return type: list of lists [[deg u_1, lambda_11, lambda_12, ..., lambda_1k_1], [deg u_2, lambda_21, lambda_22, ..., lambda_2k_2], ...]
-
-# one rational Jordan block of size 2
-sage: f = x^16 + (theta^2 + 1)*x
-sage: RJF(f)
-[     0 z2 + 1]
-[     1      1]
-
-sage: f = x^16 + (z4^3 + z4^2 + 1)*x
-sage: RJF(f)
-[ 0 z2]
-[ 1 z2]
-
-
-# two distinct rational Jordan blocks of size 1 each
-sage: f = x^16 + (theta^3 + 1)*x^4 + (theta^2 + theta + 1)*x
-sage: RJF(f)
-[ 1| 0]
-[--+--]
-[ 0|z2]
-
-sage: f = x^16 + z4^2*x^4 + (z4^3 + z4)*x
-sage: RJF(F)
-[    z2|     0]
-[------+------]
-[     0|z2 + 1]
-
-# twice the same rational Jordan block of size 1
-
-sage: f = x^16
-sage: RJF(f)
-[0|0]
-[-+-]
-[0|0]
-sage: f = x^16 + x
-sage: RJF(f)
-[1|0]
-[-+-]
-[0|1]
-
-Uk is (y + z2 + 1) * (y^2 + y + z2 + 1)
-[z2 + 1|     0      0]
-[------+-------------]
-[     0|     0 z2 + 1]
-[     0|     1      1]
-sage: f
-x^64 + (z4^2 + 1)*x^16 + (z4 + 1)*x^4 + (z4^3 + z4 + 1)*x
-
-f = random_additive(3); RJF(f)
-Uk is (y + z2) * (y + z2 + 1)^2
-[    z2|     0      0]
-[------+-------------]
-[     0|z2 + 1      1]
-[     0|     0 z2 + 1]
-sage: f
-x^64 + (z4^3 + z4^2 + z4 + 1)*x^16 + (z4^3 + z4^2 + z4)*x^4 + (z4^2 + z4)*x
-
-    '''
-    assert is_squarefree(f)
-    assert is_additive(f)
-    fstar = mclc(f)
-    minpoly = tau(fstar).factor()
-    print 'minpoly is', minpoly
-    t = len(minpoly)
-    D = []
-    for i in srange(t):
-        print "deal with factor number", i
-        u = minpoly[i][0]
-        k = minpoly[i][1]
-        nu = []
-        for j in srange(0, k + 2):
-            h = gcrc(f, invtau(u^j))
-            nu.append(h.degree().log(r))
-        m = u.degree()
-        for j in srange(1, k + 1):
-            lam = (2*nu[j] - nu[j - 1] - nu[j + 1]).divide_knowing_divisible_by(m)
-            D = D + [rat_jordan_block(u, j)] *lam
-            print "state of diagonal", D
-    return block_diagonal_matrix(D)
-
 def rat_jordan_block(u, e):
     '''produce a rational Jordan block for u with multiplicity e.
 
@@ -385,33 +302,91 @@ sage: M = rat_jordan_block(y^2 + 1, 2)
     return diag + offdiag
 
 
+def RJF(f, species_only=False):
+    '''following Algorithm 4.10 (algo:ratJNF) of GathenGiesbrechtZiegler2015, we compute the rational RJF of the Frobenius automorphism on the root space of f. Return type: matrix
+
+Optionally, we return only the species of the rational Jordan form. Return type: list of lists [[deg u_1, lambda_11, lambda_12, ..., lambda_1k_1], [deg u_2, lambda_21, lambda_22, ..., lambda_2k_2], ...]
+
+# one rational Jordan block of size 2
+sage: f = x^16 + (theta^2 + 1)*x
+sage: RJF(f)
+[     0 z2 + 1]
+[     1      1]
+sage: RJF(f, species_only=True)
+[[2, 1]]
+
+sage: f = x^16 + (z4^3 + z4^2 + 1)*x
+sage: RJF(f)
+[ 0 z2]
+[ 1 z2]
 
 
-F = y+3*eta
-G = y+eta^2+2*eta
-f = invtau(F)
-g = invtau(G)
-print "Two central polynomials", f, g
-print "and their grcrc", gcrc(f, g)
-
-n = 4
-f = random_additive(n)
-g = random_additive(n-2)
-print "Two random additive polynomials", f, g
-quo, rem = rdiv_with_rem(f,g)
-print "and their quotient and remainder (checked)", quo, rem, f == quo.subs(g) + rem
-
-n = 2
-f = random_additive(n)
-g = random_additive(n+1)
-h = random_additive(n+2)
-print "A random additive", f
-# F = mclc(f)
-# print "and its mclc", F
-
-# WORKINGMARK
+# two distinct rational Jordan blocks of size 1 each
+sage: f = x^16 + (theta^3 + 1)*x^4 + (theta^2 + theta + 1)*x
+sage: RJF(f)
+[ 1| 0]
+[--+--]
+[ 0|z2]
+sage: RJF(f, species_only=True)
+[[1, 1], [1, 1]]
 
 
+sage: f = x^16 + z4^2*x^4 + (z4^3 + z4)*x
+sage: RJF(F)
+[    z2|     0]
+[------+------]
+[     0|z2 + 1]
+
+# twice the same rational Jordan block of size 1
+
+sage: f = x^16 + x
+sage: RJF(f)
+[1|0]
+[-+-]
+[0|1]
+sage: RJF(f, species_only=True)
+[[1, 1], [1, 1]]
+
+
+Uk is (y + z2 + 1) * (y^2 + y + z2 + 1)
+[z2 + 1|     0      0]
+[------+-------------]
+[     0|     0 z2 + 1]
+[     0|     1      1]
+sage: f
+x^64 + (z4^2 + 1)*x^16 + (z4 + 1)*x^4 + (z4^3 + z4 + 1)*x
+
+f = random_additive(3); RJF(f)
+Uk is (y + z2) * (y + z2 + 1)^2
+[    z2|     0      0]
+[------+-------------]
+[     0|z2 + 1      1]
+[     0|     0 z2 + 1]
+sage: f
+x^64 + (z4^3 + z4^2 + z4 + 1)*x^16 + (z4^3 + z4^2 + z4)*x^4 + (z4^2 + z4)*x
+
+    '''
+    assert is_additive(f), "f is not additive"
+    assert is_squarefree(f), "f is additive, but not squarefree"
+    fstar = mclc(f)
+    minpoly = tau(fstar).factor()
+    t = len(minpoly)
+    D = []
+    species = []
+    for i in srange(t):
+        u = minpoly[i][0]
+        k = minpoly[i][1]
+        nu = []
+        for j in srange(0, k + 2):
+            h = gcrc(f, invtau(u^j))
+            nu.append(h.degree().log(r))
+        m = u.degree()
+        species += [[m]]
+        for j in srange(1, k + 1):
+            lam = (2*nu[j] - nu[j - 1] - nu[j + 1]).divide_knowing_divisible_by(m)
+            D = D + [rat_jordan_block(u, j)] *lam
+            species[-1].append(lam)
+    return species if species_only else block_diagonal_matrix(D)
 
 
 
@@ -419,7 +394,11 @@ print "A random additive", f
 
 
 
+# Regarding "(Q1) How many right components of a given exponent exist?"
 
+# symbolic expression for counting formula
+var('rr')
+T.<rr> = PolynomialRing(ZZ, rr)
 
 
 def is_subspecies(mu, lam):
@@ -444,108 +423,149 @@ def dim(lam):
     '''given a species returns the dimension of the ambient space.'''
     return lam[0]*sum([i*lam[i] for i in range(1, len(lam))])
 
-def SubSpecies(lam, k):
-    '''return all species of k-dim subspaces of a lambda-species vectorspace.
+def SubSpecies(lam, d):
+    '''return all species of d-dim invariant subspaces of a lambda-species vectorspace.
 
-TODO turn ths into an iterator
+TODO turn this into an iterator
     '''
-    assert (lam[0]).divides(k)
+    if not (lam[0]).divides(d):
+        return []
     MAX = dim(lam)
     all_tails = itertools.product(srange(MAX+1), repeat=len(lam)-1)
     temp = []
     for tail in all_tails:
         mu = [lam[0]] + list(tail)
-        if is_subspecies(mu, lam) and dim(mu) == k:
+        if is_subspecies(mu, lam) and dim(mu) == d:
             temp.append(mu)
     return temp
 
-
-def Frib_alpha(t, lam):
+def alpha(t, lam):
     '''
 Fripertinger Lemma 5
 species lam = [deg u, lam1, lam2, ..., lamk]
 number of vectors of height t
 
-
-sage: Frib_alpha(1, [2,1])    # J_u^(1) for irreducible u of degree 2
+sage: alpha(1, [2,1])    # J_u^(1) for irreducible u of degree 2
 r^2 - 1                       # really? really! -- because height is dim/deg
 
-sage: Frib_alpha(1, [1,1])    # (a)
+sage: alpha(1, [1,1])    # (a)
 r - 1
 
-sage: Frib_alpha(1, [1,2])    # diag(a, a)
+sage: alpha(1, [1,2])    # diag(a, a)
 r^2 - _
 
-sage: Frib_alpha(1, [1,0,1])  # matrix([[a, 1], [0, a]]) = J_a^(2)
+sage: alpha(1, [1,0,1])  # matrix([[a, 1], [0, a]]) = J_a^(2)
 r - 1
-sage: Frib_alpha(2, [1,0,1])
+sage: alpha(2, [1,0,1])
 r^2 - r
 
 '''
-    var('r')
     assert t > 0    # alternatively, return 1 (namely the 0 vector)
     m = lam[0]
-    Q = r^m
+    Q = rr^m
     nu = sum(lam[t:])    # l_t
     alpha = prod([Q^(i*lam[i]) for i in range(1,t)])
     alpha *= (Q^t - Q^(t-1))/(Q - 1)
     alpha *= Q^((t-1)*(nu-1))*(Q^nu - 1)
     return alpha
 
-def Frib_beta(t, lam, nu):
+def beta(t, lam, nu):
     '''
 Fripertinger Lemma 6
 vectorspace V with species lam and subvectorspace U with species nu
 
 count number of vectors not in U and of height exactly t
 
-sage: Frib_beta(1, [1,2], [1,2])
+sage: beta(1, [1,2], [1,2])
 0
-sage: Frib_beta(1, [1,2], [1,1])
+sage: beta(1, [1,2], [1,1])
 r^2 - r
 '''
-    var('r')
     assert is_subspecies(nu, lam)
     assert t > 0    # alternatively, return 1 (namely the 0 vector)
     m = lam[0]
-    Q = r^m
+    Q = rr^m
     k = len(lam) - 1    # maximal size of Jordan blocks
     nuext = nu+(len(lam)-len(nu))*[0]
-    cofactor = Q^((t-1)*sum([lam[i]-nuext[i] for i in range(t, k+1)]))*prod([Q^(i*lam[i]) for i in
-                                                                          range(1, t)])
-    return Frib_alpha(t, lam) - Frib_alpha(t, nu)*cofactor
+    cofactor = Q^((t-1)*sum([lam[i]-nuext[i] for i in range(t, k+1)]))*prod([Q^(i*lam[i]) for i in range(1, t)])
+    return alpha(t, lam) - alpha(t, nu)*cofactor
 
-
-
-def Frib_gamma(lam, mu):
+def gamma(lam, mu):
     '''return number of bases -- sorted by non-increasing height -- for a mu-species subspace in a lam-species ambient space.
 
-sage: Frib_gamma([1,1],[1,1])
+sage: gamma([1,1],[1,1])
 r - 1
-sage: Frib_gamma([1,2],[1,1])
+sage: gamma([1,2],[1,1])
 r^2 - 1
 '''
-    var('r')
     assert is_subspecies(mu, lam)
     nu = [mu[0]] + (len(mu) - 1)*[0]
     s = sum(mu[1:])    # number of rational Jordan blocks
     k = max([i for i in range(len(mu)) if mu[i] > nu[i]])
-    temp = Frib_alpha(k, lam)
+    temp = alpha(k, lam)
     nu[k] += 1    # nu1
     for i in range(1, s):
         knext = max([i for i in range(len(mu)) if mu[i] > nu[i]])
-        temp *= Frib_beta(knext, lam, nu)
+        temp *= beta(knext, lam, nu)
         nu[knext] += 1
     return temp
 
-def numU(lam, k):
+def Lin(lam, d):
     '''Fripertinger Theorem 2:
 
-given the species lam of an operator A on an Fr-vectorspace, return the number of k-dimensional A-invariant Fr-subvectorspaces.
+given the species lam of an operator A on an Fr-vectorspace, return the number of d-dimensional A-invariant Fr-subvectorspaces.
 
-    assume for the moment that we deal with the a single eigenfactor, i.e.
-    '''
-    return (sum([Frib_gamma(lam, mu)/Frib_gamma(mu, mu) for mu in SubSpecies(lam, k)])).simplify_full()
+    assume for the moment that we deal with the a single eigenfactor, i.e. lam = [d, lam1, ..., lamk]
+
+sage: Lin([2,4],1)
+0
+sage: Lin([2,4],2)
+rr^6 + rr^4 + rr^2 + 1
+sage: Lin([2,4],3)
+0
+sage: Lin([2,4],4)
+rr^8 + rr^6 + 2*rr^4 + rr^2 + 1
+
+TODO: direct sum over multiple species
+'''
+    if d == 0 or d >= dim(lam):
+        return T(0)
+    return sum([gamma(lam, mu)/gamma(mu, mu) for mu in SubSpecies(lam, d)])
+
+F = y+3*eta
+G = y+eta^2+2*eta
+f = invtau(F)
+g = invtau(G)
+print "Two central polynomials", f, g
+print "and their grcrc", gcrc(f, g)
+
+n = 4
+f = random_additive(n)
+g = random_additive(n-2)
+print "Two random additive polynomials", f, g
+quo, rem = rdiv_with_rem(f,g)
+print "and their quotient and remainder (checked)", quo, rem, f == quo.subs(g) + rem
+
+n = 2
+f = random_additive(n, squarefree=True)
+print "A random squarefree additive", f
+F = mclc(f)
+print "and its mclc", F
+
+
+
+# WORKINGMARK
+
+
+
+
+
+
+
+
+
+
+
 
 
 
