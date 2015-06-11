@@ -383,9 +383,9 @@ x^64 + (z4^3 + z4^2 + z4 + 1)*x^16 + (z4^3 + z4^2 + z4)*x^4 + (z4^2 + z4)*x
         m = u.degree()
         species += [[m]]
         for j in srange(1, k + 1):
-            lam = (2*nu[j] - nu[j - 1] - nu[j + 1]).divide_knowing_divisible_by(m)
-            D = D + [rat_jordan_block(u, j)] *lam
-            species[-1].append(lam)
+            lamj = (2*nu[j] - nu[j - 1] - nu[j + 1]).divide_knowing_divisible_by(m)
+            D = D + [rat_jordan_block(u, j)] *lamj
+            species[-1].append(lamj)
     return species if species_only else block_diagonal_matrix(D)
 
 
@@ -397,12 +397,14 @@ x^64 + (z4^3 + z4^2 + z4 + 1)*x^16 + (z4^3 + z4^2 + z4)*x^4 + (z4^2 + z4)*x
 # Regarding "(Q1) How many right components of a given exponent exist?"
 
 # symbolic expression for counting formula
-var('rr')
-T.<rr> = PolynomialRing(ZZ, rr)
+var('rr', 'z')
+T.<rr, z> = PolynomialRing(ZZ, rr, z)
 
+# formatting is eigenvalue species lam = [m, lamj's],
+# operator species LAM = [mu, lam, ...]
 
 def is_subspecies(mu, lam):
-    '''check if mu is a subspecies of lam. Using the criterion of Fripertinger, Theorem 3.
+    '''check if mu is a subspecies of the (eigenvalue) species lam. Using the criterion of Fripertinger, Theorem 3.
 
 sage: is_subspecies([1,1],[1,0,1])
 True
@@ -420,11 +422,11 @@ True
         return True
 
 def dim(lam):
-    '''given a species returns the dimension of the ambient space.'''
+    '''given an eigenvalue species lam returns the dimension of the ambient space.'''
     return lam[0]*sum([i*lam[i] for i in range(1, len(lam))])
 
 def SubSpecies(lam, d):
-    '''return all species of d-dim invariant subspaces of a lambda-species vectorspace.
+    '''return all possible eigenvalue species of d-dim invariant subspaces of a vectorspace with single eigenvalue of species lam.
 
 TODO turn this into an iterator
     '''
@@ -472,7 +474,7 @@ r^2 - r
 def beta(t, lam, nu):
     '''
 Fripertinger Lemma 6
-vectorspace V with species lam and subvectorspace U with species nu
+vectorspace V with single eigenvalue species lam and subvectorspace U with single eigenvalue species nu
 
 count number of vectors not in U and of height exactly t
 
@@ -510,7 +512,7 @@ r^2 - 1
         nu[knext] += 1
     return temp
 
-def Lin(lam, d):
+def primarygf(lam):
     '''Fripertinger Theorem 2:
 
 given the species lam of an operator A on an Fr-vectorspace, return the number of d-dimensional A-invariant Fr-subvectorspaces.
@@ -526,11 +528,16 @@ sage: Lin([2,4],3)
 sage: Lin([2,4],4)
 rr^8 + rr^6 + 2*rr^4 + rr^2 + 1
 
-TODO: direct sum over multiple species
+TODO: primarygf([2,4]) != primarygf([1,4]) o z^2 ?!
 '''
-    if d == 0 or d >= dim(lam):
-        return T(0)
-    return sum([gamma(lam, mu)/gamma(mu, mu) for mu in SubSpecies(lam, d)])
+    return T(1 + sum(sum([gamma(lam, mu)/gamma(mu, mu) for mu in SubSpecies(lam, d)])*z^d for d in srange(1, dim(lam)+1)))
+
+
+def gf(LAM):
+    return prod(primarygf(lam) for lam in LAM)
+
+def Lin(LAM, d):
+    return gf(LAM).coefficient(z^d)
 
 F = y+3*eta
 G = y+eta^2+2*eta
