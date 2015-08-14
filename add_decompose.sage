@@ -1,3 +1,5 @@
+# TODO dotests time out KZ2015/07/19
+
 # related packages:
 # - Maple's with(oretools) :: TODO
 # - RISC's ore_algebra :: use delta = 0 and sigma = r-th power; fails since only prime fields allowed
@@ -120,7 +122,7 @@ y + y
     assert is_central(f)
     n = f.degree().log(q)
     F = S(0)
-    coefficients = f.coeffs()
+    coefficients = f.coefficients(sparse=False)
     for i in srange(n+1):
         F += coefficients[q^i]*y^i
     return S(F)
@@ -139,7 +141,7 @@ x^16 + x
     F = S(F)
     n = F.degree()
     f = R(0)
-    coefficients = F.coeffs()
+    coefficients = F.coefficients(sparse=False)
     for i in srange(n+1):
         f += coefficients[i]*x^(q^i)
     assert is_central(f)
@@ -400,8 +402,45 @@ x^64 + (z4^3 + z4^2 + z4 + 1)*x^16 + (z4^3 + z4^2 + z4)*x^4 + (z4^2 + z4)*x
 var('rr', 'z')
 T.<rr, z> = PolynomialRing(ZZ, rr, z)
 
-# formatting is eigenvalue species lam = [m, lamj's],
-# operator species LAM = [mu, lam, ...]
+# notation:
+# single eigenvalue's species lam = [m, lamj's]
+# whole operator's species LAM = [lam, mu, ...], where lam as above
+
+class Species(list):
+    """this is a single eigenfactor u's species lam = [deg u, lam1, lam2, ..., lamk].
+
+    lam = Species([1,0,2])
+    lam.deg, lam.mul, lam.dim
+    (1, 2, 4)
+
+    TODO insert check that last element in list is nonzero. (necessary for what?!)
+"""
+
+    def __init__(self, lam):
+        self.deg = lam[0]
+        self.mul = len(lam) - 1
+        self.orderFreq = [None] + lam[1:]
+        self.dim = self.deg*sum([i*l for i, l in enumerate(lam)])
+
+    def __str__(self):
+        return str([self.deg] + self.orderFreq[1:])
+
+    def numSubspacesByDepth(self, depth):
+        return rr^sum(self.orderFreq[depth+1:])*(rr^self.orderFreq[depth] - 1)/(rr - 1)
+
+    def quotientByDepth(self, depth):
+        assert self.orderFreq[depth] > 0
+        lam = self.orderFreq[:]
+        lam[depth] -= 1
+        lam[depth - 1] += 1
+        if lam[-1] == 0:
+            lam = lam[:-1]
+        lam[0] = self.deg
+        # TODO how to handle self.dim==0?!
+        return Species(lam)
+
+class SpeciesCollection(list):
+    pass
 
 def is_subspecies(mu, lam):
     '''check if mu is a subspecies of the (eigenvalue) species lam. Using the criterion of Fripertinger, Theorem 3.
@@ -419,7 +458,31 @@ True
     for j in range(1, k+1):
         if sum(muext[j:]) > sum(lam[j:]):
             return False
-        return True
+    return True
+
+def spread(lam):
+    """
+    lam = Species([1, 2])
+    spread(lam)
+    [2]_r
+    lam = Species([1, 1, 1])
+    spread(lam)
+    2*[2]_r - 1
+
+    lam = [1, 1]
+    spread(lam)
+    1
+    lam = [1, 0, 1]
+    spread(lam)
+    1
+    lam = [1, 0, 0, 1]
+    spread(lam)
+    1
+
+
+    """
+
+
 
 def dim(lam):
     '''given an eigenvalue species lam returns the dimension of the ambient space.'''
@@ -544,7 +607,7 @@ G = y+eta^2+2*eta
 f = invtau(F)
 g = invtau(G)
 print "Two central polynomials", f, g
-print "and their grcrc", gcrc(f, g)
+print "and their gcrc", gcrc(f, g)
 
 n = 4
 f = random_additive(n)
@@ -559,7 +622,17 @@ print "A random squarefree additive", f
 F = mclc(f)
 print "and its mclc", F
 
+def spread(LAM):
+    # LAM = [lam, mu, ...]
+    pass
 
+def primaryspread(lam):
+    # lam = [m, lam1, lam2, ..., lamk]
+    m = lam[0]
+    k = len(lam) - 1
+    if m > 1:
+        return primaryspread([1] + [lam[m*i] for i in range(1, k/m + 1)])
+    return sum()#Uwith depth k * primaryspread(lam k-reduced) for depth in range(1, k+1)
 
 # WORKINGMARK
 
