@@ -1,30 +1,48 @@
 # TODO dotests time out KZ2015/07/19
 
+# Example for doctest
+#   \cite{bouulm14} build self-dual codes from factorizations of
+#   $x^{r^{n}}-ax$ beating previously known minimal distances. Over
+#   $\FF_{4}[x; 2]$, they exhibit $3$, $15$, $90$, $543$ complete
+#   decompositions for $x^{2^{2}}+x$, $x^{2^{4}}+x$, $x^{2^{6}}+x$, and
+#   $x^{2^{8}}+x$, respectively.
+
 # related packages:
 # - Maple's with(oretools) :: TODO
 # - RISC's ore_algebra :: use delta = 0 and sigma = r-th power; fails since only prime fields allowed
 
 '''
-For a *single* additive polynomial, we answer two questions.
-(Q1) How many right components of a given exponent exist?
-(Q2) How many complete decompositions exist?
+For a *single* additive polynomial, we answer the following questions.
+- RJF :: What is a rational Jordan Form for the Frobenius operator on the root space? And its species?
+- numL :: How many right components of a given exponent exist?
+- chains :: How many complete decompositions exist?
 
 Approach
 0. assume monic squarefree
 1. compute RationalJordanForm (and its species) a la GathenGiesbrechtZiegler
 2. use Fripertinger on species to return
-   a) generating function for subspace numbers answering (i)
-   b) number of chains in subspace lattice answering (ii)
+   a) generating function for subspace numbers answering (Q1)
+   b) number of chains in subspace lattice answering (Q2)
 3. reduce general case to assumptions in 0.
 
 Language/design options:
-1. use "skew multiplication language"
-2. use "additive composition language"
-We opt for 2. in the interest of compatibility with the other packages in the module.
+- use "skew multiplication language"
+- use "additive composition language"
+We opt for the latter in the interest of compatibility with the other packages in the module.
+
+Classes/Objects:
+- single eigenvalue's species lam = [m, lamj's]
+- whole operator's species LAM = [lam, mu, ...], where lam as above
+
+
 
 '''
 
-import itertools
+from itertools import product
+from collections import Counter
+
+# SECTION setup
+# =============
 
 p = 2
 
@@ -191,7 +209,7 @@ def dot_product(polys, scalars):
     return sum(p*a for p, a in zip(polys, scalars))
 
 def linear_relation(polys):
-    '''for a list of additive polynomials form Fq[x; r] return a list of elements of coeffients from Fr (!) such that their scalar product is zero; return None if none exists.
+    '''for a list of additive polynomials from Fq[x; r] return a list of elements of coeffients from Fr (!) such that their scalar product is zero; return None if none exists.
 
 Since this list is built up incrementally, we assume that there is no linear relation amoung the first m-1 polynomials and we can set the last scalar to 1.
 
@@ -211,7 +229,7 @@ sage: linear_relation([x, x^2, x^2+x])
     if m == 1:
         '''single entry is nonzero due to previous if-clause.'''
         return None
-    for head in itertools.product(Fr, repeat=m - 1):
+    for head in product(Fr, repeat=m - 1):
         scalars = head + (R(1),)
         if dot_product(polys, scalars) == R(0):
             return scalars
@@ -271,6 +289,55 @@ def random_additive(n, squarefree=False, central=False):
         f += coeff*x^(r^i)
     assert is_additive(f)
     return f
+
+def test_setup():
+    F = y+3*eta
+    G = y+eta^2+2*eta
+    f = invtau(F)
+    g = invtau(G)
+    print "Two central polynomials", f, g
+    print "and their gcrc", gcrc(f, g)
+    n = 4
+    f = random_additive(n)
+    g = random_additive(n-2)
+    print "Two random additive polynomials", f, g
+    quo, rem = rdiv_with_rem(f,g)
+    print "and their quotient and remainder (checked)", quo, rem, f == quo.subs(g) + rem
+    n = 2
+    f = random_additive(n, squarefree=True)
+    print "A random squarefree additive", f
+    F = mclc(f)
+    print "and its mclc", F
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# SECTION RJF
+# ===========
 
 def rat_jordan_block(u, e):
     '''produce a rational Jordan block for u with multiplicity e.
@@ -390,39 +457,79 @@ x^64 + (z4^3 + z4^2 + z4 + 1)*x^16 + (z4^3 + z4^2 + z4)*x^4 + (z4^2 + z4)*x
             species[-1].append(lamj)
     return species if species_only else block_diagonal_matrix(D)
 
+def test_RJF():
+    f = x^16 + (theta^2 + 1)*x
+    print RJF(f)
+    print RJF(f, species_only=True)
 
 
 
 
 
 
-# Regarding "(Q1) How many right components of a given exponent exist?"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# SECTION numL
+# ============
 
 # symbolic expression for counting formula
 var('rr', 'z')
 T.<rr, z> = PolynomialRing(ZZ, rr, z)
 
-# notation:
-# single eigenvalue's species lam = [m, lamj's]
-# whole operator's species LAM = [lam, mu, ...], where lam as above
-
 class Species(list):
     """this is a single eigenfactor u's species lam = [deg u, lam1, lam2, ..., lamk].
 
-    lam = Species([1,0,2])
-    lam.deg, lam.mul, lam.dim
+    sage: lam = Species([1,0,2])
+    sage: lam.deg, lam.mul, lam.dim
     (1, 2, 4)
 
-    TODO insert check that last element in list is nonzero. (necessary for what?!)
+    sage: mu = Species([1,1]); nu = Species([1,0,1]); xi = Species([1,1,1])
+    sage: mu.is_subspecies(nu)
+    True
+    sage: xi.is_subspecies(nu)
+    False
+    sage: xi.is_subspecies(lam)
+    True
 """
 
     def __init__(self, lam):
+        assert len(lam) > 1
+        assert lam[-1] > 0
         self.deg = lam[0]
         self.mul = len(lam) - 1
         self.orderFreq = [None] + lam[1:]
         self.dim = self.deg*sum([i*l for i, l in enumerate(lam)])
 
-    def __str__(self):
+    def __repr__(self):
         return str([self.deg] + self.orderFreq[1:])
 
     def numSubspacesByDepth(self, depth):
@@ -436,71 +543,42 @@ class Species(list):
         if lam[-1] == 0:
             lam = lam[:-1]
         lam[0] = self.deg
-        # TODO how to handle self.dim==0?!
         return Species(lam)
 
-class SpeciesCollection(list):
+    def is_subspecies(self, other):
+        '''check whether self is a subspecies of other using the criterion of Fripertinger, Theorem 3.'''
+        if self.deg != other.deg:
+            return False
+        excess = other.mul - self.mul
+        self_extend = self.orderFreq + excess*[0]
+        for j in range(1, self.mul + 1):
+            if sum(self_extend[j:]) > sum(other.orderFreq[j:]):
+                return False
+        return True
+
+class SpeciesCollection(Counter):
+    """better: multi-set"""
     pass
 
-def is_subspecies(mu, lam):
-    '''check if mu is a subspecies of the (eigenvalue) species lam. Using the criterion of Fripertinger, Theorem 3.
-
-sage: is_subspecies([1,1],[1,0,1])
-True
-sage: is_subspecies([1,1,1],[1,0,1])
-False
-sage: is_subspecies([1,1,1],[1,0,2])
-True
-'''
-    assert lam[0] == mu[0]
-    muext = mu + (len(lam)-len(mu))*[0]
-    k = len(lam) - 1
-    for j in range(1, k+1):
-        if sum(muext[j:]) > sum(lam[j:]):
-            return False
-    return True
-
-def spread(lam):
-    """
-    lam = Species([1, 2])
-    spread(lam)
-    [2]_r
-    lam = Species([1, 1, 1])
-    spread(lam)
-    2*[2]_r - 1
-
-    lam = [1, 1]
-    spread(lam)
-    1
-    lam = [1, 0, 1]
-    spread(lam)
-    1
-    lam = [1, 0, 0, 1]
-    spread(lam)
-    1
-
-
-    """
-
-
-
-def dim(lam):
-    '''given an eigenvalue species lam returns the dimension of the ambient space.'''
-    return lam[0]*sum([i*lam[i] for i in range(1, len(lam))])
+def rm_trailing_zeroes(lam):
+    return [a for i, a in enumerate(lam) if sum(lam[i:]) > 0]
 
 def SubSpecies(lam, d):
-    '''return all possible eigenvalue species of d-dim invariant subspaces of a vectorspace with single eigenvalue of species lam.
+    '''return list of eigenvalue species that are
+    - a subspecies of lam and
+    - have dimension d
 
 TODO turn this into an iterator
     '''
-    if not (lam[0]).divides(d):
-        return []
-    MAX = dim(lam)
-    all_tails = itertools.product(srange(MAX+1), repeat=len(lam)-1)
+    MAX = lam.dim
+    all_tails = product(srange(MAX+1), repeat=lam.mul)
     temp = []
     for tail in all_tails:
-        mu = [lam[0]] + list(tail)
-        if is_subspecies(mu, lam) and dim(mu) == d:
+        tail = rm_trailing_zeroes(tail)
+        if sum(tail) == 0:
+            continue
+        mu = Species([lam.deg] + list(tail))
+        if mu.dim == d and mu.is_subspecies(lam):
             temp.append(mu)
     return temp
 
@@ -526,13 +604,14 @@ r^2 - r
 
 '''
     assert t > 0    # alternatively, return 1 (namely the 0 vector)
-    m = lam[0]
-    Q = rr^m
-    nu = sum(lam[t:])    # l_t
-    alpha = prod([Q^(i*lam[i]) for i in range(1,t)])
+    Q = rr^lam.deg
+    nu = sum(lam.orderFreq[t:])    # l_t
+    alpha = prod([Q^(i*lam.orderFreq[i]) for i in range(1,t)])
     alpha *= (Q^t - Q^(t-1))/(Q - 1)
     alpha *= Q^((t-1)*(nu-1))*(Q^nu - 1)
     return alpha
+
+# REWORKINGMARK
 
 def beta(t, lam, nu):
     '''
@@ -595,32 +674,57 @@ TODO: primarygf([2,4]) != primarygf([1,4]) o z^2 ?!
 '''
     return T(1 + sum(sum([gamma(lam, mu)/gamma(mu, mu) for mu in SubSpecies(lam, d)])*z^d for d in srange(1, dim(lam)+1)))
 
-
 def gf(LAM):
     return prod(primarygf(lam) for lam in LAM)
 
 def Lin(LAM, d):
     return gf(LAM).coefficient(z^d)
 
-F = y+3*eta
-G = y+eta^2+2*eta
-f = invtau(F)
-g = invtau(G)
-print "Two central polynomials", f, g
-print "and their gcrc", gcrc(f, g)
+def spread(lam):
+    """
+    lam = Species([1, 2])
+    spread(lam)
+    [2]_r
+    lam = Species([1, 1, 1])
+    spread(lam)
+    2*[2]_r - 1
 
-n = 4
-f = random_additive(n)
-g = random_additive(n-2)
-print "Two random additive polynomials", f, g
-quo, rem = rdiv_with_rem(f,g)
-print "and their quotient and remainder (checked)", quo, rem, f == quo.subs(g) + rem
+    lam = [1, 1]
+    spread(lam)
+    1
+    lam = [1, 0, 1]
+    spread(lam)
+    1
+    lam = [1, 0, 0, 1]
+    spread(lam)
+    1
+    """
 
-n = 2
-f = random_additive(n, squarefree=True)
-print "A random squarefree additive", f
-F = mclc(f)
-print "and its mclc", F
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# SECTION chains
+# ==============
 
 def spread(LAM):
     # LAM = [lam, mu, ...]
@@ -781,27 +885,4 @@ x^3 + a'x^2 + a'x + 1  | = (x^2 + ax + 1)(x + 1) = (x + a')(x^2 + a)
 x^3 + a'x^2 + a'x + a  | = (x^2 + a')(x + a') = (x + a)(x^2 + x + 1)
 x^3 + a'x^2 + a'x + a' |
 
-'''
-
-'''
-APPENDIX: Is r^n - 1 the maximal splitting degree for an additive polynomial of degree r^n?
-
-def split_degree(f):
-    K = f.splitting_field('Theta')
-    return K.degree()/Fq.degree()
-
-p=q=r=2
-- n=15 :: r^n - 1 (over 1000 random choices)
-- n=20 :: PARI OutOfMemory
-
-q=r=4
-- n=10 :: RUNNING
-
-Max = 0
-for i in range(1000):
-    f = random_additive(n)
-    d = split_degree(f)
-    Max = max(Max, d)
-
-print 'At degree', r^n, 'we find (after 1000 trials) as largest extension degree for the splitting field of an additive polynomial', Max
 '''
