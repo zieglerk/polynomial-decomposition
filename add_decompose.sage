@@ -611,8 +611,6 @@ r^2 - r
     alpha *= Q^((t-1)*(nu-1))*(Q^nu - 1)
     return alpha
 
-# REWORKINGMARK
-
 def beta(t, lam, nu):
     '''
 Fripertinger Lemma 6
@@ -625,13 +623,13 @@ sage: beta(1, [1,2], [1,2])
 sage: beta(1, [1,2], [1,1])
 r^2 - r
 '''
-    assert is_subspecies(nu, lam)
+    assert nu.is_subspecies(lam)
     assert t > 0    # alternatively, return 1 (namely the 0 vector)
-    m = lam[0]
-    Q = rr^m
-    k = len(lam) - 1    # maximal size of Jordan blocks
-    nuext = nu+(len(lam)-len(nu))*[0]
-    cofactor = Q^((t-1)*sum([lam[i]-nuext[i] for i in range(t, k+1)]))*prod([Q^(i*lam[i]) for i in range(1, t)])
+    Q = rr^lam.deg
+    k = lam.mul     # maximal size of Jordan blocks
+    nuext = nu.orderFreq + (lam.mul - nu.mul)*[0]
+    cofactor = Q^((t-1)*sum([lam.orderFreq[i]-nuext[i] for i in range(t, k+1)]))
+    cofactor *= prod([Q^(i*lam.orderFreq[i]) for i in range(1, t)])
     return alpha(t, lam) - alpha(t, nu)*cofactor
 
 def gamma(lam, mu):
@@ -642,16 +640,25 @@ r - 1
 sage: gamma([1,2],[1,1])
 r^2 - 1
 '''
-    assert is_subspecies(mu, lam)
-    nu = [mu[0]] + (len(mu) - 1)*[0]
-    s = sum(mu[1:])    # number of rational Jordan blocks
-    k = max([i for i in range(len(mu)) if mu[i] > nu[i]])
-    temp = alpha(k, lam)
-    nu[k] += 1    # nu1
+    assert mu.is_subspecies(lam)
+    k1 = mu.mul
+    nu1 = Species([mu.deg] + (mu.mul-1)*[0] + [1])
+    s = sum(mu.orderFreq[1:])    # number of rational Jordan blocks
+    k = k1
+    kseq = [None, k1]
+    nu = nu1
+    nuseq = [None, nu1]
     for i in range(1, s):
-        knext = max([i for i in range(len(mu)) if mu[i] > nu[i]])
-        temp *= beta(knext, lam, nu)
-        nu[knext] += 1
+        knext = max([i for i in range(mu.mul + 1) if mu.orderFreq[i] > nu.orderFreq[i]])
+        kseq.append(knext)
+        nuorder = nu.orderFreq[:]
+        nuorder[knext] += 1
+        nunext = Species([mu.deg] + nuorder[1:])
+        nuseq.append(nunext)
+        nu = nunext
+    temp = alpha(k1, lam)
+    for i in range(1, s):
+        temp *= beta(kseq[i+1], lam, nuseq[i])
     return temp
 
 def primarygf(lam):
@@ -661,44 +668,25 @@ given the species lam of an operator A on an Fr-vectorspace, return the number o
 
     assume for the moment that we deal with the a single eigenfactor, i.e. lam = [d, lam1, ..., lamk]
 
-sage: Lin([2,4],1)
-0
-sage: Lin([2,4],2)
-rr^6 + rr^4 + rr^2 + 1
-sage: Lin([2,4],3)
-0
-sage: Lin([2,4],4)
-rr^8 + rr^6 + 2*rr^4 + rr^2 + 1
-
 TODO: primarygf([2,4]) != primarygf([1,4]) o z^2 ?!
-'''
-    return T(1 + sum(sum([gamma(lam, mu)/gamma(mu, mu) for mu in SubSpecies(lam, d)])*z^d for d in srange(1, dim(lam)+1)))
+    '''
+    return T(1 + sum(sum([gamma(lam, mu)/gamma(mu, mu) for mu in SubSpecies(lam, d)])*z^d for d in srange(1, lam.dim+1)))
 
-def gf(LAM):
+def genfun(LAM):
     return prod(primarygf(lam) for lam in LAM)
 
 def Lin(LAM, d):
-    return gf(LAM).coefficient(z^d)
-
-def spread(lam):
-    """
-    lam = Species([1, 2])
-    spread(lam)
-    [2]_r
-    lam = Species([1, 1, 1])
-    spread(lam)
-    2*[2]_r - 1
-
-    lam = [1, 1]
-    spread(lam)
-    1
-    lam = [1, 0, 1]
-    spread(lam)
-    1
-    lam = [1, 0, 0, 1]
-    spread(lam)
-    1
-    """
+    '''
+        sage: Lin([2,4],1)
+    0
+    sage: Lin([2,4],2)
+    rr^6 + rr^4 + rr^2 + 1
+    sage: Lin([2,4],3)
+    0
+    sage: Lin([2,4],4)
+    rr^8 + rr^6 + 2*rr^4 + rr^2 + 1
+    '''
+    return genfun(LAM).coefficient(z^d)
 
 
 
@@ -728,6 +716,27 @@ def spread(lam):
 
 def spread(LAM):
     # LAM = [lam, mu, ...]
+    pass
+
+def num_chains(lam):
+    """
+    lam = Species([1, 2])
+    spread(lam)
+    [2]_r
+    lam = Species([1, 1, 1])
+    spread(lam)
+    2*[2]_r - 1
+
+    lam = [1, 1]
+    spread(lam)
+    1
+    lam = [1, 0, 1]
+    spread(lam)
+    1
+    lam = [1, 0, 0, 1]
+    spread(lam)
+    1
+    """
     pass
 
 def primaryspread(lam):
