@@ -1,12 +1,5 @@
 # TODO dotests time out KZ2015/07/19
 
-# Example for doctest
-#   \cite{bouulm14} build self-dual codes from factorizations of
-#   $x^{r^{n}}-ax$ beating previously known minimal distances. Over
-#   $\FF_{4}[x; 2]$, they exhibit $3$, $15$, $90$, $543$ complete
-#   decompositions for $x^{2^{2}}+x$, $x^{2^{4}}+x$, $x^{2^{6}}+x$, and
-#   $x^{2^{8}}+x$, respectively.
-
 # related packages:
 # - Maple's with(oretools) :: TODO
 # - RISC's ore_algebra :: use delta = 0 and sigma = r-th power; fails since only prime fields allowed
@@ -455,7 +448,7 @@ x^64 + (z4^3 + z4^2 + z4 + 1)*x^16 + (z4^3 + z4^2 + z4)*x^4 + (z4^2 + z4)*x
             lamj = (2*nu[j] - nu[j - 1] - nu[j + 1]).divide_knowing_divisible_by(m)
             D = D + [rat_jordan_block(u, j)] *lamj
             species[-1].append(lamj)
-    return species if species_only else block_diagonal_matrix(D)
+    return [Species(lam) for lam in species] if species_only else block_diagonal_matrix(D)
 
 def test_RJF():
     f = x^16 + (theta^2 + 1)*x
@@ -505,6 +498,9 @@ def test_RJF():
 var('rr', 'z')
 T.<rr, z> = PolynomialRing(ZZ, rr, z)
 
+def qbracket(n, q):
+    return (q^n - 1)/(q - 1)
+
 class Species(list):
     """this is a single eigenfactor u's species lam = [deg u, lam1, lam2, ..., lamk].
 
@@ -532,19 +528,6 @@ class Species(list):
     def __repr__(self):
         return str([self.deg] + self.orderFreq[1:])
 
-    def numSubspacesByDepth(self, depth):
-        return rr^sum(self.orderFreq[depth+1:])*(rr^self.orderFreq[depth] - 1)/(rr - 1)
-
-    def quotientByDepth(self, depth):
-        assert self.orderFreq[depth] > 0
-        lam = self.orderFreq[:]
-        lam[depth] -= 1
-        lam[depth - 1] += 1
-        if lam[-1] == 0:
-            lam = lam[:-1]
-        lam[0] = self.deg
-        return Species(lam)
-
     def is_subspecies(self, other):
         '''check whether self is a subspecies of other using the criterion of Fripertinger, Theorem 3.'''
         if self.deg != other.deg:
@@ -555,6 +538,25 @@ class Species(list):
             if sum(self_extend[j:]) > sum(other.orderFreq[j:]):
                 return False
         return True
+
+    def numMinSubspacesByDepth(self, depth):
+        if depth == self.mul:
+            return qbracket(self.orderFreq[depth], rr)
+        return rr^sum(self.orderFreq[depth+1:])*qbracket(self.orderFreq[depth], rr)
+
+    def quotientByDepth(self, depth):
+        '''what to do if you should return 0, i.e. for input self = (deg u, 1) and depth = 1'''
+        assert self.orderFreq[depth] > 0
+        lam = self.orderFreq[:]
+        lam[depth] -= 1
+        if depth > 1:
+            lam[depth - 1] += 1
+        if lam[-1] == 0:
+            lam = lam[:-1]
+        if len(lam) == 1:
+            return None
+        lam[0] = self.deg
+        return Species(lam)
 
 class SpeciesCollection(Counter):
     """better: multi-set"""
@@ -677,7 +679,7 @@ def genfun(LAM):
 
 def Lin(LAM, d):
     '''
-        sage: Lin([2,4],1)
+    sage: Lin([2,4],1)
     0
     sage: Lin([2,4],2)
     rr^6 + rr^4 + rr^2 + 1
@@ -687,6 +689,14 @@ def Lin(LAM, d):
     rr^8 + rr^6 + 2*rr^4 + rr^2 + 1
     '''
     return genfun(LAM).coefficient(z^d)
+
+def test_numL():
+    lam = Species([1,3])
+    LAM = [lam]
+    print Lin(LAM, 1)
+    # rr^2 + rr + 1
+    print Lin(LAM, 2)
+    # rr^2 + rr + 1
 
 
 
@@ -714,12 +724,10 @@ def Lin(LAM, d):
 # SECTION chains
 # ==============
 
-def spread(LAM):
-    # LAM = [lam, mu, ...]
-    pass
-
 def num_chains(lam):
     """
+    LAM = [lam, mu, ...]
+
     lam = Species([1, 2])
     spread(lam)
     [2]_r
@@ -739,15 +747,48 @@ def num_chains(lam):
     """
     pass
 
-def primaryspread(lam):
-    # lam = [m, lam1, lam2, ..., lamk]
-    m = lam[0]
-    k = len(lam) - 1
-    if m > 1:
-        return primaryspread([1] + [lam[m*i] for i in range(1, k/m + 1)])
-    return sum()#Uwith depth k * primaryspread(lam k-reduced) for depth in range(1, k+1)
+def primary_num_chains(lam):
+    # base case: single block
+    if sum(lam.orderFreq[1:]) == 1:
+        return 1
+    # base case: several blocks of size 1
+    if lam.mul == 1:
+        return prod([qbracket(i, rr) for i in range(1, lam.orderFreq[1] + 1)])
+    tmp = 0
+    for depth in range(1, lam.mul+1):
+        num = lam.numMinSubspacesByDepth(depth)
+        if num == 0:
+            continue
+        rem = lam.quotientByDepth(depth)
+        tmp += num*primary_num_chains(rem)
+    return tmp
 
-# WORKINGMARK
+def num_chains(LAM):
+    if len(LAM) == 1:
+        return primary_num_chains(LAM[0])
+# return sum([for lam in LAM])
+    tmp = 0
+    for i, lam in enumerate(LAM):
+        for depth in range(1, lam.mul+1):
+            num = lam.numMinSubspacesByDepth(depth)
+            if num == 0:
+                continue
+            rem = lam.quotientByDepth(depth)
+            if rem == None:
+                reducedLAM = LAM[:i] + LAM[i+1:]
+            else:
+                reducedLAM = LAM[:i] + [lam.quotientByDepth(depth)] + LAM[i+1:]
+            tmp += lam.numMinSubspacesByDepth(depth)*num_chains(reducedLAM)
+    return tmp
+
+def test_num_chains():
+    lam = Species([1,1,1])
+    mu = Species([1,0,1])
+    nu = Species([1,1])
+    xi = Species([1,2])
+    print num_chains([lam])
+    print num_chains([mu, nu])
+    print num_chains([xi,nu])
 
 
 
@@ -763,7 +804,38 @@ def primaryspread(lam):
 
 
 
+# SECTION Application to coding theory
+# ====================================
 
+#   \cite{bouulm14} build self-dual codes from factorizations of
+#   $x^{r^{n}}-ax$ beating previously known minimal distances. Over
+#   $\FF_{4}[x; 2]$, they exhibit $3$, $15$, $90$, $543$ complete
+#   decompositions for $x^{2^{2}}+x$, $x^{2^{4}}+x$, $x^{2^{6}}+x$, and
+#   $x^{2^{8}}+x$, respectivel.y
+
+p = 2
+e = 1
+r = p^e
+d = 2
+q = r^d    # @future: p^d
+assert p.is_prime()
+assert r.is_power_of(p)
+assert q.is_power_of(r)
+var('eta', 'theta')
+Fr = GF(r, conway=True, prefix='z')    # ground field ...
+eta = Fr.gen()                         # ... and its generator
+Fq = GF(q, conway=True, prefix='z')    # field extension ...
+theta = Fq.gen()                       # ... and its generator
+var('x, y')
+# no way to restrict to the additives Fq[x; r], so we consider the whole ring R = Fq[x]
+R.<x> = PolynomialRing(Fq, x)
+# the centre of Fq[x; r] is Fr[x; q] with commutative image S = Fr[y]
+S.<y> = PolynomialRing(Fr, y)
+
+def test_example():
+    for f in [x^4 + x, x^16 + x, x^64 + x, x^256 + x]:
+        LAM = RJF(f, species_only=True)
+        print LAM, num_chains(LAM).substitute(rr=r) # 3, 15, 90, 543
 
 
 
