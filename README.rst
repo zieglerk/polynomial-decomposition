@@ -25,6 +25,7 @@ ingredient for the obvious inclusion-exclusion formula is an
 understanding of *collisions*, that is of distinct decompositions of a
 given polynomial.
 
+
 Submodules
 ==========
 
@@ -66,132 +67,11 @@ Load the module in your local Sage installation::
 See each module's documentation for further instructions.
 
 
-Output
-======
-
-Folder structure::
-
-    ./data/
-        - C_n_q.sobj
-        - D_n_q.sobj
-        - Dd_n_q.sobj
-        - Dtext_n_q.txt
-        - numbers.txt
-
-For internal use::
-
-      ./TO_SORT--old
-        fifi*
-        /data/
-            - C
-            - D
-            - I
-            - P
-            - email n=25, q=5
-            - old for comparison incl. n=18, q=9 and more wild stuff
-         /report/
-
-
-Polynomials
-===========
-
-tame dictionaries
------------------
-
-legend: Y (counting available), YY (counting and dictionary
-available), EOM (out of memory), EOT (out of time), NN (user abort), ? (untested)
-
-====  === ===  ===  ===   ===
-n\\q    2   3    4    5     7
-====  === ===  ===  ===   ===
-   4   Y   Y    Y    Y     Y
-   6   Y   Y    Y    Y     Y
-  8*   Y  YY    Y   YY    YY
-   9   Y   Y    Y    Y     Y
-  10   Y   Y    Y    Y     Y
- 12*   Y   Y    Y   YY    YY
-  14   Y   Y    Y    Y     Y
-  15   Y   Y    Y    Y     Y
- 16*   Y  YY    Y   YY     ?
- 18*   Y   Y    Y   YY     ?
- 20*   Y  YY              EOM
-  21   Y   Y
-  22   Y   Y
- 24*   Y            EOT   EOT
-  25   Y
-  26   Y
- 27*  YY        NN   ?     ?
- 28*   Y   NN        ?
- 30*   Y                  EOT
- 32*      EOT        -     -
-  35   Y   ?    ?
- 36*                 ?	   ?
- 42*                EOT
- 64*       ?         ?     ?
- 81*  EOT       -    -     -
-105*  EOT       -
-125    ?   ?    ?          ?
-====  === ===  ===  ===   ===
-
-Composite degrees with more than 2 prime factors (counted with
-multiplicity) are marked with \*.
-
-
-additive dictionaries
----------------------
-
-suggestions:
-
-r = 4 => q = 16, n = 256
-         q = 64, n = 4,(16?)
-r = 8 => q = 8, n = 8, 64
-         q = 64, n = 8, 64
-
-r = 3 => q = 3, n = 3, 9, 27, 81, 243, 729
-         q = 9, n = 3, 9, 27, 81
-	 q = 27, n = 3, 9, 27, 81
-r = 9 => q = 9, n = 9, 81, 729
-         q = 81, n = 9, 81
-
-r = 5 => q = 5, n = 5, 25, 125, 625
-	 q = 25, n = 5, 25, 125, 625?
-r = 25 =>q = 25, n = 25, 625, (3125?!)
-         q = 625, n = 25, 625
-
-actual data:
-
-==== === === === === === === === === === === ==== === === === === === ===
-n\\q  2   3   4   5   7   8   9   11  13  16  25   27  32  64  81 125 625
-==== === === === === === === === === === === ==== === === === === === ===
-2    2       2           2               2            2   2
-3        3                   3                    3
-4    2       2,4         2               2,4          2   2
-5                 5                          5
-8    2       2           2               2            2   2
-9        3                   3,9                  3            9
-16   2       2,4         2               2,4
-25                5                          5,25                     25
-27       3                   3                    3
-32   2       2           2
-64   2       2,4                         4
-81       3                   3,9                               9
-125               5                          5
-128  2       2
-243      3
-256  2       4                           4
-512  2
-625               5                          25                       EOM
-729      3                   9
-1024 2       4
-2048 2
-==== === === === === === === === === === === ==== === === === === === ===
-
-
 Todos
 =====
 
 - add the formulas of [BGZ13]_ to ``p2_construct_collision_by_parameter.sage``
-
+- compare with the ore-package and sigma(a) = a^r
 
 Requirements
 ============
