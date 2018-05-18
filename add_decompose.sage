@@ -786,9 +786,9 @@ def test_num_chains():
     mu = Species([1,0,1])
     nu = Species([1,1])
     xi = Species([1,2])
-    print num_chains([lam])
-    print num_chains([mu, nu])
-    print num_chains([xi,nu])
+    print num_chains([lam])    # 2r+1
+    print num_chains([mu, nu]) # 3
+    print num_chains([xi,nu])  # 3r+3
 
 
 
