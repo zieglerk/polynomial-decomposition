@@ -1,4 +1,4 @@
-# TODO dotests time out KZ2015/07/19
+# TODO doctests time out KZ2015/07/19
 
 # related packages:
 # - Maple's with(oretools) :: TODO
@@ -25,7 +25,7 @@ We opt for the latter in the interest of compatibility with the other packages i
 
 Classes/Objects:
 - single eigenvalue's species lam = [m, lamj's]
-- whole operator's species LAM = [lam, mu, ...], where lam as above
+- whole operator's species LAM = [lam, mu, ...], where lam, mu, ... are as above
 
 
 
